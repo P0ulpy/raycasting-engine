@@ -12,8 +12,14 @@ find_package(raylib CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_path(RAYGUI_INCLUDE_DIRS "raygui.h")
 
+file(GLOB_RECURSE APP_SRC_FILES
+    "src/*.h"
+    "src/*.hpp"
+    "src/*.cpp"
+)
+
 add_executable(${APP_TARGET_NAME}
-    src/main.cpp
+    ${APP_SRC_FILES}
 )
 
 set_target_properties(${APP_TARGET_NAME}
