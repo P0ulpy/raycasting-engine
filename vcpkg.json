@@ -2,5 +2,18 @@
   "name" : "cmake-vcpkg-template",
   "version" : "0.1.0",
   "builtin-baseline" : "c9919121dde6f61c0436adda94624636e041226b",
-  "dependencies" : []
+  "dependencies" : [
+    {
+      "name" : "raylib",
+      "version>=" : "5.0"
+    },
+    {
+      "name" : "raygui",
+      "version>=" : "4.0"
+    },
+    {
+      "name" : "imgui",
+      "version>=" : "1.90"
+    }
+  ]
 }
