@@ -10,12 +10,12 @@
 #include <imgui_stdlib.h>
 
 #include <cmath>
+#include <vector>
 
-constexpr int DefaultScreenWidth = 1000;
-constexpr int DefaultScreenHeight = 650;
+constexpr int DefaultScreenWidth = 1720;
+constexpr int DefaultScreenHeight = 880;
 
-
-Vector2 Vector2FromAngle(float angleRadian, float length = 1)
+Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
 {
     return {
         length * cosf(angleRadian),
@@ -23,6 +23,10 @@ Vector2 Vector2FromAngle(float angleRadian, float length = 1)
     };
 }
 
+float Vector2DirectionToAngle(Vector2 direction)
+{
+    return atan2f(direction.y, direction.x);
+}
 
 struct Segment
 {
@@ -42,6 +46,8 @@ struct RasterRay
     Vector2 position { 0 };
     Vector2 direction { 0 };
 
+    RasterRay() = default;
+    RasterRay(Vector2 pos) : position(pos) {}
     RasterRay(Vector2 pos, Vector2 dir) : position(pos), direction(dir) {}
 
     void LookAt(const Vector2& positionLook)
@@ -102,18 +108,21 @@ struct RaycasterCamera
     float yaw { 0 };
     // float pitch; // later ;)
 
-    float fov { 90 };
+    float fov { 60 };
 
     Vector2 Forward()
     {
-        return Vector2FromAngle(yaw);
+        return Vector2DirectionFromAngle(yaw);
     }
 
-    // void LookAt(const Vector2& positionLook)
-    // {
-    //     direction = Vector2Subtract(position, positionLook);
-    //     direction = Vector2Normalize(direction);
-    // }
+    void LookAt(float x, float y) { LookAt({x, y}); }
+    void LookAt(const Vector2& positionLook)
+    {
+        Vector2 direction = Vector2Subtract(positionLook, position);
+        direction = Vector2Normalize(direction);
+
+        yaw = Vector2DirectionToAngle(direction);
+    }
     
     void Draw()
     {
@@ -149,10 +158,12 @@ int main()
 
     SetTargetFPS(144);
 
-    float deltaTime = 0.0f;
+    float deltaTime = 0;
     float lastFrameTime = GetTime();
 
     RaycasterCamera cam;
+
+    bool moveMode = false;
 
     while (!WindowShouldClose())
     {
@@ -160,36 +171,59 @@ int main()
         deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
 
-        // Update
+        // Inputs
 
-        if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        if(IsKeyPressed(KEY_LEFT_CONTROL) || IsKeyPressed(KEY_RIGHT_CONTROL))
         {
-            cam.position.x = GetMouseX();
-            cam.position.y = GetMouseY();
+            moveMode = !moveMode;
         }
-        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+
+        if(moveMode)
         {
-            // cam.LookAt({ GetMouseX(), GetMouseY()});
+            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+            {
+                cam.position.x = GetMouseX();
+                cam.position.y = GetMouseY();
+            }
+            if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+            {
+                cam.LookAt((float)GetMouseX(), (float)GetMouseY());
+            }
         }
+
+        // Update
+        
+
+        // Draw
 
         BeginDrawing();
 
         ClearBackground(LIGHTGRAY);
 
-        // Draw
-
-        RasterRay ray(cam.position, cam.Forward());
-
         HitInfo hit;
+        RasterRay ray(cam.position);
 
-        for(size_t i = 0; i < WorldSize; i++)
+        float fovRate = cam.fov / GetScreenWidth();
+        float angle = -(cam.fov / 2);
+
+        for(int w = 0; w < GetScreenWidth(); w++)
         {
-            if(RayToSegmentCollision(ray, World[i], hit))
+            angle += fovRate;
+            ray.direction = Vector2DirectionFromAngle((angle * DEG2RAD) + cam.yaw);
+
+            for(size_t i = 0; i < WorldSize; i++)
             {
-                DrawLineV(cam.position, hit.hitPosition, BLUE);
-                DrawCircleV(hit.hitPosition, 5, BLUE);
+                if(RayToSegmentCollision(ray, World[i], hit))
+                {
+                    DrawLineV(cam.position, hit.hitPosition, BLUE);
+                    DrawCircleV(hit.hitPosition, 1, RED);
+                }
             }
         }
+
+        // Cam forward line
+        Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 50));
+        DrawLineV(cam.position, camHeadingDirectionPoint, RED);
 
         for(size_t i = 0; i < WorldSize; i++)
         {
@@ -197,6 +231,13 @@ int main()
         }
 
         cam.Draw();
+
+        // Draw GUI
+
+        constexpr auto MoveModeTextEnable = "[ CTRL ] Move mode enabled";
+        constexpr auto MoveModeTextDisable = "[ CTRL ] Move mode disabled";
+
+        DrawText((moveMode) ? MoveModeTextEnable : MoveModeTextDisable, 20, 20, 20, (moveMode) ? GREEN : RED);
 
         rlImGuiBegin();
             cam.DrawGUI();
