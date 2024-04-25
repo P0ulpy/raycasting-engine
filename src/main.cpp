@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <vector>
+#include <limits>
 
 constexpr int DefaultScreenWidth = 1720;
 constexpr int DefaultScreenHeight = 880;
@@ -59,7 +60,7 @@ struct RasterRay
 
 struct HitInfo
 {
-    Vector2 hitPosition;
+    Vector2 position { 0 };
 };
 
 bool RayToSegmentCollision(const RasterRay& ray, const Segment& seg, HitInfo& hitInfo)
@@ -93,7 +94,7 @@ bool RayToSegmentCollision(const RasterRay& ray, const Segment& seg, HitInfo& hi
         const Vector2 hitPosition = { xCollision, yCollision };
         
         hitInfo  = {
-            .hitPosition = hitPosition
+            .position = hitPosition
         };
 
         return true;
@@ -173,10 +174,7 @@ int main()
 
         // Inputs
 
-        if(IsKeyPressed(KEY_LEFT_CONTROL) || IsKeyPressed(KEY_RIGHT_CONTROL))
-        {
-            moveMode = !moveMode;
-        }
+        moveMode = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);        
 
         if(moveMode)
         {
@@ -200,7 +198,6 @@ int main()
 
         ClearBackground(LIGHTGRAY);
 
-        HitInfo hit;
         RasterRay ray(cam.position);
 
         float fovRate = cam.fov / GetScreenWidth();
@@ -211,13 +208,29 @@ int main()
             angle += fovRate;
             ray.direction = Vector2DirectionFromAngle((angle * DEG2RAD) + cam.yaw);
 
+            float hitDistance = std::numeric_limits<float>::max();
+            Vector2 hitPosition;
+
             for(size_t i = 0; i < WorldSize; i++)
             {
+                HitInfo hit;
+
                 if(RayToSegmentCollision(ray, World[i], hit))
                 {
-                    DrawLineV(cam.position, hit.hitPosition, BLUE);
-                    DrawCircleV(hit.hitPosition, 1, RED);
+                    float distance = Vector2Distance(ray.position, hit.position);
+
+                    if(distance < hitDistance)
+                    {
+                        hitDistance = distance;
+                        hitPosition = hit.position;
+                    }
                 }
+            }
+
+            if(hitDistance < std::numeric_limits<float>::max())
+            {
+                DrawLineV(cam.position, hitPosition, BLUE);
+                DrawCircleV(hitPosition, 1, RED);
             }
         }
 
@@ -234,8 +247,8 @@ int main()
 
         // Draw GUI
 
-        constexpr auto MoveModeTextEnable = "[ CTRL ] Move mode enabled";
-        constexpr auto MoveModeTextDisable = "[ CTRL ] Move mode disabled";
+        constexpr auto MoveModeTextEnable = "Hold [CTRL] Move mode enabled";
+        constexpr auto MoveModeTextDisable = "Hold [CTRL] Move mode disabled";
 
         DrawText((moveMode) ? MoveModeTextEnable : MoveModeTextDisable, 20, 20, 20, (moveMode) ? GREEN : RED);
 
