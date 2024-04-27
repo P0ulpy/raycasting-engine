@@ -51,6 +51,11 @@ struct RasterRay
     RasterRay(Vector2 pos) : position(pos) {}
     RasterRay(Vector2 pos, Vector2 dir) : position(pos), direction(dir) {}
 
+    float Yaw()
+    {
+        return Vector2DirectionToAngle(direction);
+    }
+
     void LookAt(const Vector2& positionLook)
     {
         direction = Vector2Subtract(position, positionLook);
@@ -116,6 +121,14 @@ struct RaycasterCamera
         return Vector2DirectionFromAngle(yaw);
     }
 
+    Vector2 Right()
+    {
+        Vector2 forward = Forward();
+        return {
+            -forward.y, forward.x
+        };
+    }
+
     void LookAt(float x, float y) { LookAt({x, y}); }
     void LookAt(const Vector2& positionLook)
     {
@@ -123,11 +136,6 @@ struct RaycasterCamera
         direction = Vector2Normalize(direction);
 
         yaw = Vector2DirectionToAngle(direction);
-    }
-    
-    void Draw()
-    {
-        DrawCircleV(position, 10, GREEN);
     }
 
     void DrawGUI()
@@ -164,7 +172,8 @@ int main()
 
     RaycasterCamera cam;
 
-    bool moveMode = false;
+    bool moveMode   = true;
+    bool view3DMode = false;
 
     while (!WindowShouldClose())
     {
@@ -174,18 +183,79 @@ int main()
 
         // Inputs
 
-        moveMode = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);        
+        if(IsKeyPressed(KEY_TAB))
+        {
+            view3DMode = !view3DMode;
+        }
+
+        if(IsKeyPressed(KEY_LEFT_CONTROL) || IsKeyPressed(KEY_RIGHT_CONTROL))
+        {
+            moveMode = !moveMode;
+        }
 
         if(moveMode)
         {
-            if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+            if(!view3DMode)
             {
-                cam.position.x = GetMouseX();
-                cam.position.y = GetMouseY();
+                if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                {
+                    cam.position.x = GetMouseX();
+                    cam.position.y = GetMouseY();
+                }
+                if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+                {
+                    cam.LookAt((float)GetMouseX(), (float)GetMouseY());
+                }
             }
-            if(IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+            else
             {
-                cam.LookAt((float)GetMouseX(), (float)GetMouseY());
+                {
+                    Vector2 moveDirection {0};
+
+                    if(IsKeyDown(KEY_D))
+                    {
+                        moveDirection = Vector2Add(moveDirection, cam.Right());
+                    }
+                    if(IsKeyDown(KEY_A))
+                    {
+                        Vector2 left = Vector2Negate(cam.Right());
+                        moveDirection = Vector2Add(moveDirection, left);
+                    }
+                    if(IsKeyDown(KEY_W))
+                    {
+                        moveDirection = Vector2Add(moveDirection, cam.Forward());
+                    }
+                    if(IsKeyDown(KEY_S))
+                    {
+                        Vector2 backward = Vector2Negate(cam.Forward());
+                        moveDirection = Vector2Add(moveDirection, backward);
+                    }
+
+                    float moveSpeed = 100.f;
+
+                    moveDirection = Vector2Normalize(moveDirection);
+                    moveDirection = Vector2Scale(moveDirection, moveSpeed);
+                    moveDirection = Vector2Scale(moveDirection, deltaTime);
+
+                    cam.position = Vector2Add(cam.position, moveDirection);
+                }
+
+                {
+                    // Get the mouse delta (how much the mouse moved since the last frame)
+                    Vector2 mouseDelta = GetMouseDelta();
+                    SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+
+                    // Scale the mouse movement by a sensitivity factor to control the speed of the rotation
+                    constexpr float sensitivity = 0.005f;
+                    float yawChange = mouseDelta.x * sensitivity;
+
+                    // Update the camera's yaw
+                    cam.yaw += yawChange;
+
+                    // Make sure the yaw is between 0 and 2 * PI
+                    if(cam.yaw > 2 * PI) cam.yaw -= 2 * PI; 
+                    if(cam.yaw < 0)      cam.yaw += 2 * PI;
+                }
             }
         }
 
@@ -196,61 +266,120 @@ int main()
 
         BeginDrawing();
 
-        ClearBackground(LIGHTGRAY);
-
-        RasterRay ray(cam.position);
-
-        float fovRate = cam.fov / GetScreenWidth();
-        float angle = -(cam.fov / 2);
-
-        for(int w = 0; w < GetScreenWidth(); w++)
+        if(view3DMode && moveMode)
         {
-            angle += fovRate;
-            ray.direction = Vector2DirectionFromAngle((angle * DEG2RAD) + cam.yaw);
+            HideCursor();
+        }
+        else
+        {
+            ShowCursor();
+        }
 
-            float hitDistance = std::numeric_limits<float>::max();
-            Vector2 hitPosition;
+        if(view3DMode)
+            ClearBackground(BLACK);
+        else
+            ClearBackground(LIGHTGRAY);
 
-            for(size_t i = 0; i < WorldSize; i++)
+
+        {
+            constexpr float viewMaxDistance = 1000.0f;
+
+            RasterRay ray(cam.position);
+
+            float fovRate = cam.fov / GetScreenWidth();
+            float angle = -(cam.fov / 2);
+
+            for(int screenX = 0; screenX < GetScreenWidth(); ++screenX)
             {
-                HitInfo hit;
+                angle += fovRate;
+                ray.direction = Vector2DirectionFromAngle((angle * DEG2RAD) + cam.yaw);
 
-                if(RayToSegmentCollision(ray, World[i], hit))
+                float hitDistance = std::numeric_limits<float>::max();
+                Vector2 hitPosition;
+
+                for(size_t i = 0; i < WorldSize; i++)
                 {
-                    float distance = Vector2Distance(ray.position, hit.position);
+                    HitInfo hit;
 
-                    if(distance < hitDistance)
+                    if(RayToSegmentCollision(ray, World[i], hit))
                     {
-                        hitDistance = distance;
-                        hitPosition = hit.position;
+                        float distance = Vector2Distance(ray.position, hit.position);
+
+                        if(distance < hitDistance)
+                        {
+                            hitDistance = distance;
+                            hitPosition = hit.position;
+                        }
+                    }
+                }
+
+                if(hitDistance < std::numeric_limits<float>::max())
+                {
+                    if(!view3DMode)
+                    {
+                        DrawLineV(cam.position, hitPosition, BLUE);
+                        DrawCircleV(hitPosition, 1, RED);                        
+                    }
+                    else
+                    {
+                        // Normalize distance to [0, 1]
+                        float tBrightness = Clamp(hitDistance, 0, viewMaxDistance) / viewMaxDistance;
+                        uint8_t brightness = Lerp(255, 0, tBrightness);
+                        
+                        constexpr float ProjectionDistance = 100.f;
+
+                        float forwardHeadingAngle = ray.Yaw() - cam.yaw;
+                        float headingLenght = hitDistance * cosf(forwardHeadingAngle);
+
+                        float rayDirectionDeg = cam.fov * (floor(0.5 * GetScreenWidth()) - screenX) / GetScreenWidth();
+                        float rayProjectionPosition = 0.5 * tanf(rayDirectionDeg * DEG2RAD) / tanf((0.5 * cam.fov) * DEG2RAD);
+
+                        float height = GetScreenHeight() * ProjectionDistance / (hitDistance * cosf(rayDirectionDeg * DEG2RAD));
+                        
+                        // float height = 200.f;
+ 
+                        {
+                            float heightDelta = GetScreenHeight() - height;
+                            float topY = (heightDelta > 0) ? heightDelta / 2 : heightDelta;
+                            float bottomY = topY + height;
+
+                            DrawLineV(
+                                { (float)screenX, topY }, 
+                                { (float)screenX, bottomY }, 
+                                { 166, 46, 90, brightness }
+                            );
+                        }
                     }
                 }
             }
+        }
 
-            if(hitDistance < std::numeric_limits<float>::max())
+        if(!view3DMode)
+        {
+            // Cam forward line
+            Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 50));
+            DrawLineV(cam.position, camHeadingDirectionPoint, RED);
+            DrawCircleV(cam.position, 10, GREEN);
+
+            for(size_t i = 0; i < WorldSize; i++)
             {
-                DrawLineV(cam.position, hitPosition, BLUE);
-                DrawCircleV(hitPosition, 1, RED);
+                World[i].Draw();
             }
         }
 
-        // Cam forward line
-        Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 50));
-        DrawLineV(cam.position, camHeadingDirectionPoint, RED);
-
-        for(size_t i = 0; i < WorldSize; i++)
-        {
-            World[i].Draw();
-        }
-
-        cam.Draw();
-
         // Draw GUI
 
-        constexpr auto MoveModeTextEnable = "Hold [CTRL] Move mode enabled";
-        constexpr auto MoveModeTextDisable = "Hold [CTRL] Move mode disabled";
+        constexpr auto view3DTextEnable = "[TAB] 3DView enabled";
+        constexpr auto view3DTextDisable = "[TAB] 3DView disabled";
 
-        DrawText((moveMode) ? MoveModeTextEnable : MoveModeTextDisable, 20, 20, 20, (moveMode) ? GREEN : RED);
+        DrawText((view3DMode) ? view3DTextEnable : view3DTextDisable, 20, 20, 20, (view3DMode) ? GREEN : RED);
+
+        constexpr auto MoveModeTextEnable = "[CTRL] Move mode enabled";
+        constexpr auto MoveModeTextDisable = "[CTRL] Move mode disabled";
+
+        DrawText((moveMode) ? MoveModeTextEnable : MoveModeTextDisable, 20, 40, 20, (moveMode) ? GREEN : RED);
+
+        // Draw ImGUI
 
         rlImGuiBegin();
             cam.DrawGUI();
