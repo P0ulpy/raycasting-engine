@@ -1,20 +1,31 @@
 #include <raylib.h>
-#define RAYGUI_IMPLEMENTATION
-
 #include <raymath.h>
-
+#define RAYGUI_IMPLEMENTATION
 #include <raygui.h>
-#include <rlImGui.h>
 
+#include <rlImGui.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
 #include <cmath>
 #include <vector>
 #include <limits>
+#include <sstream>
 
 constexpr int DefaultScreenWidth = 1720;
 constexpr int DefaultScreenHeight = 880;
+
+constexpr Color MY_RED          { 166, 46, 90, 255 };
+constexpr Color MY_PURPLE       { 89, 27, 79, 255 };
+constexpr Color MY_DARK_BLUE    { 40, 17, 64, 255 };
+constexpr Color MY_BEIGE        { 242, 211, 172, 255 };
+constexpr Color MY_BLACK        { 13, 13, 13, 255 };
+
+constexpr Color ColorAlpha255(Color color, uint8_t alpha)
+{
+    return { color.r, color.g, color.b, alpha };
+}
+
 
 Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
 {
@@ -35,11 +46,6 @@ struct Segment
     Vector2 b { 0 };
 
     Segment(Vector2 a, Vector2 b) : a(a), b(b) {}
-
-    void Draw()
-    {
-        DrawLineV(a, b, GRAY);
-    }
 };
 
 struct RasterRay
@@ -111,10 +117,14 @@ bool RayToSegmentCollision(const RasterRay& ray, const Segment& seg, HitInfo& hi
 struct RaycasterCamera
 {
     Vector2 position { DefaultScreenWidth / 2, DefaultScreenHeight / 2 };
-    float yaw { 0 };
-    // float pitch; // later ;)
+    float yaw   { 0 };
+    float pitch { 0 };
 
     float fov { 60 };
+    float fovVectical { 120 };
+
+    float farPlaneDistance = 1000.0f;
+    float nearPlaneDistance = 100.f;
 
     Vector2 Forward()
     {
@@ -143,15 +153,20 @@ struct RaycasterCamera
         ImGui::Begin("Camera");
         
         ImGui::InputFloat2("position", (float*)(&position));
-        ImGui::SliderAngle("yaw", &yaw);
-
+        ImGui::SliderFloat("yaw", &yaw, -90, 90);
+        ImGui::SliderAngle("pitch", &pitch);
+        
         ImGui::SliderFloat("FOV", &fov, 20, 180);
+        ImGui::SliderFloat("FOV Vetical", &fovVectical, 20, 180);
+        
+        ImGui::SliderFloat("Far plane Distance", &farPlaneDistance, 1, 5000);
+        ImGui::SliderFloat("Near plane Distance", &nearPlaneDistance, 1, 500);
 
         ImGui::End();
     }
 };
 
-Segment World[] =
+const Segment World[] =
 {
     { { 500, 200 }, { 500, 500 } },
     { { 500, 500 }, { 200, 550 } },
@@ -162,9 +177,15 @@ constexpr size_t WorldSize = sizeof(World) / sizeof(Segment);
 int main()
 {
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-    InitWindow(DefaultScreenWidth, DefaultScreenHeight, "wall-it");
-    rlImGuiSetup(true);
+    InitWindow(DefaultScreenWidth, DefaultScreenHeight, "raycasting-engine");
+    SetExitKey(KEY_NULL);
 
+    rlImGuiSetup(true);
+    ImGuiIO& imguiIO = ImGui::GetIO();
+    imguiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; 
+    imguiIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    imguiIO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; 
+    
     SetTargetFPS(144);
 
     float deltaTime = 0;
@@ -180,6 +201,12 @@ int main()
         float currentTime = GetTime();
         deltaTime = currentTime - lastFrameTime;
         lastFrameTime = currentTime;
+
+        std::string windowTitle = "raycasting-engine [";
+        windowTitle += std::to_string(1.0f / deltaTime);
+        windowTitle += " FPS]";
+
+        SetWindowTitle(windowTitle.c_str());
 
         // Inputs
 
@@ -246,21 +273,26 @@ int main()
                     SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
 
                     // Scale the mouse movement by a sensitivity factor to control the speed of the rotation
-                    constexpr float sensitivity = 0.005f;
+                    constexpr float sensitivity = 0.003f;
                     float yawChange = mouseDelta.x * sensitivity;
+                    float pitchChange = mouseDelta.y * sensitivity;
 
                     // Update the camera's yaw
                     cam.yaw += yawChange;
+                    cam.pitch += pitchChange;
 
                     // Make sure the yaw is between 0 and 2 * PI
                     if(cam.yaw > 2 * PI) cam.yaw -= 2 * PI; 
                     if(cam.yaw < 0)      cam.yaw += 2 * PI;
+
+                    // Make sure the pitcj is between -(PI / 2) and PI / 2
+                    if(cam.pitch > PI / 2)  cam.pitch = PI / 2;
+                    if(cam.pitch < -PI / 2) cam.pitch = -PI / 2;
                 }
             }
         }
 
         // Update
-        
 
         // Draw
 
@@ -276,78 +308,89 @@ int main()
         }
 
         if(view3DMode)
-            ClearBackground(BLACK);
+        {            
+            ClearBackground(MY_BLACK);
+        }
         else
-            ClearBackground(LIGHTGRAY);
-
-
         {
-            constexpr float viewMaxDistance = 1000.0f;
+            ClearBackground(LIGHTGRAY);
+        }
 
-            RasterRay ray(cam.position);
+        // Raycasting rendering
+        {
+            float floorVerticalOffset = round(0.5f * GetScreenHeight() * (tanf(cam.pitch)) / tanf(0.5f * cam.fovVectical));
 
-            float fovRate = cam.fov / GetScreenWidth();
-            float angle = -(cam.fov / 2);
+            // floor / ceiling rendering
+            // {
+            //     float center = (GetScreenHeight() / 2) - floorVerticalOffset;
+            //     DrawRectangle(0, 0, GetScreenWidth(), center, BLUE);
+            //     DrawRectangle(0, center, GetScreenWidth(), GetScreenHeight(), GRAY);
+            // }
 
-            for(int screenX = 0; screenX < GetScreenWidth(); ++screenX)
+            // Terain rendering
             {
-                angle += fovRate;
-                ray.direction = Vector2DirectionFromAngle((angle * DEG2RAD) + cam.yaw);
+                RasterRay ray(cam.position);
 
-                float hitDistance = std::numeric_limits<float>::max();
-                Vector2 hitPosition;
+                float fovRate = cam.fov / GetScreenWidth();
+                float angle = -(cam.fov / 2);
 
-                for(size_t i = 0; i < WorldSize; i++)
+                for(int screenX = 0; screenX < GetScreenWidth(); ++screenX)
                 {
-                    HitInfo hit;
+                    angle += fovRate;
+                    ray.direction = Vector2DirectionFromAngle((angle * DEG2RAD) + cam.yaw);
 
-                    if(RayToSegmentCollision(ray, World[i], hit))
+                    float hitDistance = std::numeric_limits<float>::max();
+                    Vector2 hitPosition;
+
+                    for(size_t i = 0; i < WorldSize; i++)
                     {
-                        float distance = Vector2Distance(ray.position, hit.position);
+                        HitInfo hit;
 
-                        if(distance < hitDistance)
+                        if(RayToSegmentCollision(ray, World[i], hit))
                         {
-                            hitDistance = distance;
-                            hitPosition = hit.position;
+                            float distance = Vector2Distance(ray.position, hit.position);
+
+                            if(distance < hitDistance)
+                            {
+                                hitDistance = distance;
+                                hitPosition = hit.position;
+                            }
                         }
                     }
-                }
 
-                if(hitDistance < std::numeric_limits<float>::max())
-                {
-                    if(!view3DMode)
+                    if(hitDistance < std::numeric_limits<float>::max())
                     {
-                        DrawLineV(cam.position, hitPosition, BLUE);
-                        DrawCircleV(hitPosition, 1, RED);                        
-                    }
-                    else
-                    {
-                        // Normalize distance to [0, 1]
-                        float tBrightness = Clamp(hitDistance, 0, viewMaxDistance) / viewMaxDistance;
-                        uint8_t brightness = Lerp(255, 0, tBrightness);
-                        
-                        constexpr float ProjectionDistance = 100.f;
-
-                        float forwardHeadingAngle = ray.Yaw() - cam.yaw;
-                        float headingLenght = hitDistance * cosf(forwardHeadingAngle);
-
-                        float rayDirectionDeg = cam.fov * (floor(0.5 * GetScreenWidth()) - screenX) / GetScreenWidth();
-                        float rayProjectionPosition = 0.5 * tanf(rayDirectionDeg * DEG2RAD) / tanf((0.5 * cam.fov) * DEG2RAD);
-
-                        float height = GetScreenHeight() * ProjectionDistance / (hitDistance * cosf(rayDirectionDeg * DEG2RAD));
-                        
-                        // float height = 200.f;
- 
+                        if(!view3DMode)
                         {
-                            float heightDelta = GetScreenHeight() - height;
-                            float topY = (heightDelta > 0) ? heightDelta / 2 : heightDelta;
-                            float bottomY = topY + height;
+                            DrawLineV(cam.position, hitPosition, BLUE);
+                            DrawCircleV(hitPosition, 1, RED);                        
+                        }
+                        else
+                        {
+                            hitDistance = Clamp(hitDistance, 0, cam.farPlaneDistance);
 
-                            DrawLineV(
-                                { (float)screenX, topY }, 
-                                { (float)screenX, bottomY }, 
-                                { 166, 46, 90, brightness }
-                            );
+                            // Normalize distance to [0, 1]
+                            float tBrightness = hitDistance / cam.farPlaneDistance;
+                            uint8_t brightness = Lerp(255, 0, tBrightness);
+
+                            float rayDirectionDeg = cam.fov * (floor(0.5 * GetScreenWidth()) - screenX) / GetScreenWidth();
+                            float rayProjectionPositionInScreen = 0.5 * tanf(rayDirectionDeg * DEG2RAD) / tanf((0.5 * cam.fov) * DEG2RAD);
+                            float objectHeight = round(GetScreenHeight() * cam.nearPlaneDistance / (hitDistance * cosf(rayDirectionDeg * DEG2RAD)));
+
+                            // terrain rendering
+                            {
+                                float heightDelta = GetScreenHeight() - objectHeight;
+                                float halfHeightDelta = heightDelta / 2;
+
+                                float topY = (halfHeightDelta - floorVerticalOffset);
+                                float bottomY = (topY + objectHeight);
+
+                                DrawLine(
+                                    screenX, topY, 
+                                    screenX, bottomY, 
+                                    ColorAlpha255(MY_PURPLE, brightness)
+                                );
+                            }
                         }
                     }
                 }
@@ -363,7 +406,7 @@ int main()
 
             for(size_t i = 0; i < WorldSize; i++)
             {
-                World[i].Draw();
+                DrawLineV(World[i].a, World[i].b, GRAY);
             }
         }
 

@@ -13,7 +13,10 @@
     },
     {
       "name" : "imgui",
-      "version>=" : "1.90"
+      "version>=" : "1.90",
+      "features": [
+        "docking-experimental"
+      ]
     }
   ]
 }
