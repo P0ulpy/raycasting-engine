@@ -4,12 +4,122 @@
 			"path": ".."
 		}
 	],
+	"extensions": {
+        "recommendations": [
+            "ms-vscode.cpptools",
+            "ms-vscode.cmake-tools",
+        ]
+    },
 	"launch": {
 		"version": "0.2.0",
-		"configurations": [],
+		"configurations": [
+			{
+				"name" : "(vsdbg) Debug RaycastingEngine",
+				"type": "cppvsdbg",
+				"request": "launch",
+				"preLaunchTask": "CMake build Debug",
+				"program": "${workspaceFolder}/out/Debug/Debug/raycasting-engine-app.exe",
+				"cwd": "${workspaceFolder}/out/Debug/Debug",
+			},
+			{
+				"name" : "(vsdbg) Release RaycastingEngine",
+				"type": "cppvsdbg",
+				"request": "launch",
+				"preLaunchTask": "CMake build Release",
+				"program": "${workspaceFolder}/out/Release/Release/raycasting-engine-app.exe",
+				"cwd": "${workspaceFolder}/out/Release/Release",
+			},
+			{
+				"name": "(gdb) Debug RaycastingEngine",
+				"type": "cppdbg",
+				"request": "launch",
+				"preLaunchTask": "CMake build Debug",
+				"program": "${workspaceFolder}/out/Debug/raycasting-engine-app.exe",
+				"cwd": "${workspaceFolder}/out/Debug",
+				"MIMode": "gdb",
+				"miDebuggerPath": "gdb.exe",
+				"externalConsole": true,
+				"args": [],
+				"setupCommands": [
+					{
+						"description": "Enable pretty-printing for gdb",
+						"text": "-enable-pretty-printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+			{
+				"name": "(gdb) Release RaycastingEngine",
+				"type": "cppdbg",
+				"request": "launch",
+				"preLaunchTask": "CMake build Release",
+				"program": "${workspaceFolder}/out/Release/raycasting-engine-app.exe",
+				"cwd": "${workspaceFolder}/out/Release",
+				"MIMode": "gdb",
+				"miDebuggerPath": "gdb.exe",
+				"externalConsole": true,
+				"args": [],
+				"setupCommands": [
+					{
+						"description": "Enable pretty-printing for gdb",
+						"text": "-enable-pretty-printing",
+						"ignoreFailures": true
+					}
+				]
+			},
+		],
 		"compounds": []
 	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+                "label": "CMake build Debug",
+                "command": "${workspaceFolder}/scripts/build-debug.bat",
+                "type": "shell",
+                "args": [],
+                "presentation": {
+                    "reveal": "always"
+                },
+                "group": {
+                    "kind": "build",
+                    "isDefault": true
+                },
+                "problemMatcher": []
+            },
+            {
+                "label": "CMake build Release",
+                "command": "${workspaceFolder}/scripts/build-release.bat",
+                "type": "shell",
+                "presentation": {
+                    "reveal": "always"
+                },
+                "group": "build"
+            }
+		]
+	},
 	"settings": {
+		"cmake.autoSelectActiveFolder": false,
+        "cmake.configureOnOpen": false,
+        "cmake.buildTask": true,
+        "cmake.buildBeforeRun": true,
+        "cmake.buildDirectory": "${workspaceFolder}/out/${variant:buildType}",
+		"cmake.generator": "Visual Studio 17 2022",
+        "cmake.defaultVariants": {
+            "buildType": {
+                "default": "Debug",
+                "choices": {
+                    "Debug": {
+                        "short": "Debug",
+                        "buildType": "Debug"
+                    },
+                    "Release": {
+                        "short": "Release",
+                        "buildType": "Release"
+                    }
+                }
+            }
+        },
 		"files.associations": {
 			"*.ejs": "html",
 			"*.m": "cpp",
@@ -59,8 +169,26 @@
 			"type_traits": "cpp",
 			"utility": "cpp",
 			"initializer_list": "cpp",
-			"cinttypes": "cpp"
+			"cinttypes": "cpp",
+			"bit": "cpp",
+			"compare": "cpp",
+			"concepts": "cpp",
+			"ios": "cpp",
+			"stack": "cpp",
+			"xfacet": "cpp",
+			"xhash": "cpp",
+			"xiosbase": "cpp",
+			"xlocale": "cpp",
+			"xlocinfo": "cpp",
+			"xlocnum": "cpp",
+			"xmemory": "cpp",
+			"xstddef": "cpp",
+			"xstring": "cpp",
+			"xtr1common": "cpp",
+			"xtree": "cpp",
+			"xutility": "cpp"
 		},
+		"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 		"C_Cpp_Runner.cCompilerPath": "gcc",
 		"C_Cpp_Runner.cppCompilerPath": "g++",
 		"C_Cpp_Runner.debuggerPath": "gdb",
@@ -118,7 +246,5 @@
 		"C_Cpp_Runner.showCompilationTime": false,
 		"C_Cpp_Runner.useLinkTimeOptimization": false,
 		"C_Cpp_Runner.msvcSecureNoWarnings": false,
-		"cmake.configureOnOpen": true,
-		"cmake.buildDirectory": "${workspaceFolder}/out/${buildType}"
 	}
 }
