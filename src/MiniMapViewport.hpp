@@ -48,7 +48,7 @@ private:
     float zoom = 1.f;
 };
 
-void RenderMinimap(RenderTexture2D& targetTexture, World& world, RaycatingCamera& cam, float zoom)
+void RenderMinimap(RenderTexture2D& targetTexture, World& world, RaycastingCamera& cam, float zoom)
 {
     Camera2D minimapCamera = { 0 };
     minimapCamera.target = cam.position;
@@ -66,9 +66,9 @@ void RenderMinimap(RenderTexture2D& targetTexture, World& world, RaycatingCamera
             DrawLineV(cam.position, camHeadingDirectionPoint, RED);
             DrawCircleV(cam.position, 10, GREEN);
 
-            for(auto & [ key, sector ] : world.sectors)
+            for(const auto& [ key, sector ] : world.Sectors)
             {
-                for(const auto& wall : sector.segments)
+                for(const auto& wall : sector.walls)
                 {
                     DrawLineV(wall.segment.a, wall.segment.b, wall.color);
                 }

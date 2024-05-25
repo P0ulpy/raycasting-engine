@@ -5,7 +5,19 @@
 #include <cmath>
 #include <cstdint>
 
-Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
+struct Vector2i
+{
+    int x { 0 };
+    int y { 0 };
+};
+
+struct Vector2ui
+{
+    unsigned int x { 0 };
+    unsigned int y { 0 };
+};
+
+inline Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
 {
     return {
         length * cosf(angleRadian),
@@ -13,7 +25,7 @@ Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
     };
 }
 
-float Vector2DirectionToAngle(Vector2 direction)
+inline float Vector2DirectionToAngle(Vector2 direction)
 {
     return atan2f(direction.y, direction.x);
 }
@@ -44,9 +56,10 @@ struct RasterRay
 struct HitInfo
 {
     Vector2 position { 0 };
+    float distance = 0;
 };
 
-bool RayToSegmentCollision(const RasterRay& ray, const Segment& seg, HitInfo& hitInfo)
+inline bool RayToSegmentCollision(const RasterRay& ray, const Segment& seg, HitInfo& hitInfo)
 {
     const float x1 = seg.a.x;
     const float y1 = seg.a.y;
@@ -77,11 +90,20 @@ bool RayToSegmentCollision(const RasterRay& ray, const Segment& seg, HitInfo& hi
         const Vector2 hitPosition = { xCollision, yCollision };
         
         hitInfo  = {
-            .position = hitPosition
+            .position = hitPosition,
+            .distance = Vector2Distance(ray.position, hitPosition)
         };
 
         return true;
     }
 
     return false;
+}
+
+inline float RayAngleforScreenX(int screenX, float fov, int renderAreaWidth)
+{
+    float fovRate = fov / renderAreaWidth;
+    float angle = -(fov / 2);
+
+    return angle + (fovRate * screenX);
 }

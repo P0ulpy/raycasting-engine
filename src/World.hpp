@@ -1,34 +1,35 @@
 #pragma once
 
 #include "RaycastingMath.hpp"
+
 #include <vector>
 #include <unordered_map>
 
-constexpr uint32_t NULL_SECTOR = 0;
+constexpr uint32_t NULL_SECTOR { static_cast<uint32_t>(-1) };
 
 struct Wall
 {
     Segment segment;
+    uint32_t toSector = NULL_SECTOR;
     Color color = WHITE;
-    uint32_t windowToSector = NULL_SECTOR;
 };
 
 struct Sector
 {
-    uint32_t id;
-    std::vector<Wall> segments;
+    std::vector<Wall> walls;
     float zfloor = 0;
     float zceiling = 0;
 };
 
 struct World
 {
-    std::unordered_map<uint32_t, Sector> sectors =
+    std::unordered_map<uint32_t, Sector> Sectors = 
     {
-        { 1, {
-                .id = 1,
-                .segments = {
-                    { 
+        {
+            1, 
+            {
+                .walls = {
+                    {
                         .segment = { { 500, 500 }, { 500, 700 } }, 
                         .color = RED,
                     },
@@ -37,30 +38,31 @@ struct World
                         .color = BLUE,
                     },
                     {
-                        .segment = { { 500, 500 }, { 700, 700 } }, 
+                        .segment = { { 500, 500 }, { 700, 700 } },
+                        .toSector = 2U,
                         .color = PURPLE,
-                        .windowToSector = 2,
                     },
                 }
             },
         },
-        { 2, {
-                .id = 2,
-                .segments = {
-                    { 
-                        .segment = { { 500, 500 }, { 700, 700 } }, 
-                        .color = PURPLE,
-                        .windowToSector = 1,
-                    },
+        { 
+            2, 
+            {
+                .walls = {
                     { 
                         .segment = { { 700, 700 }, { 700, 500 } }, 
                         .color = GREEN,
                     },
-                    { 
+                    {
                         .segment = { { 700, 500 }, { 500, 500 } }, 
                         .color = YELLOW,
                     },
-                },
+                    // {
+                    //     .segment = { { 500, 500 }, { 700, 700 } },
+                    //     .toSector = 1U,
+                    //     .color = PURPLE,
+                    // },
+                }
             },
         },
     };

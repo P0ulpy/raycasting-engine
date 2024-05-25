@@ -8,7 +8,7 @@
 class RaycastingCameraViewport
 {
 public:
-    RaycastingCameraViewport(RaycatingCamera& camera)
+    RaycastingCameraViewport(RaycastingCamera& camera)
         : cam(camera)
     {}
 
@@ -78,7 +78,7 @@ private:
     }
 
 private:
-    RaycatingCamera& cam;
+    RaycastingCamera& cam;
 
     bool mouseLocked = false;
     bool focused     = false;

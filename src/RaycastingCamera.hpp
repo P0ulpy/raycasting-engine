@@ -7,7 +7,7 @@
 
 #include "RaycastingMath.hpp"
 
-struct RaycatingCamera
+struct RaycastingCamera
 {
     Vector2 position { 0 };
     float yaw        { 0 };
@@ -23,17 +23,17 @@ struct RaycatingCamera
 
     uint32_t currentSector = 1;
 
-    RaycatingCamera(Vector2 position = { 0 })
+    RaycastingCamera(Vector2 position = { 0 })
         : position(position)
         , renderTexture(LoadRenderTexture(GetScreenWidth(), GetScreenHeight()))
     {}
 
-    RaycatingCamera(int renderTextureWidth, int renderTextureHeight, Vector2 position = { 0 })
+    RaycastingCamera(int renderTextureWidth, int renderTextureHeight, Vector2 position = { 0 })
         : position(position)
         , renderTexture(LoadRenderTexture(renderTextureWidth, renderTextureHeight))
     {}
 
-    ~RaycatingCamera()
+    ~RaycastingCamera()
     {
         UnloadRenderTexture(renderTexture);
     }
@@ -86,7 +86,15 @@ struct RaycatingCamera
     }
 };
 
-void UpdateCamera(RaycatingCamera& cam, float deltaTime)
+inline float RayAngleforScreenXCam(int screenX, const RaycastingCamera& cam)
+{
+    float fovRate = cam.fov / cam.renderTexture.texture.width;
+    float angle = -(cam.fov / 2);
+
+    return angle + (fovRate * screenX);
+}
+
+inline void UpdateCamera(RaycastingCamera& cam, float deltaTime)
 {
     Vector2 moveDirection { 0 };
 

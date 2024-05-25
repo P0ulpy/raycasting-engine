@@ -63,10 +63,10 @@ int main()
     float lastFrameTime = GetTime();
 
     /// Global
-
+    
     World world;
 
-    RaycatingCamera cam = {
+    RaycastingCamera cam = {
         { 550, 600 },
     };
 
