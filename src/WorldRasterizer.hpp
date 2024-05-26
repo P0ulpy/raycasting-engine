@@ -55,4 +55,4 @@ CameraYAxisData ComputeCameraYAxis(
     float topOffsetPercentage = 0, float bottomOffsetPercentage = 0
 );
 
-void RenderCameraYAxis(CameraYAxisData renderData, Color color);
+void RenderCameraYAxis(CameraYAxisData renderData, Color color, bool topBorder = true, bool bottomBorder = false);

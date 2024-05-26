@@ -2,40 +2,53 @@
 
 #include "RaycastingMath.hpp"
 
-#include <vector>
 #include <unordered_map>
-
-constexpr uint32_t NULL_SECTOR { static_cast<uint32_t>(-1) };
-
-struct Wall
-{
-    Segment segment;
-    uint32_t toSector = NULL_SECTOR;
-    Color color = WHITE;
-};
-
-struct Sector
-{
-    std::vector<Wall> walls;
-    float zfloor = 0;
-    float zceiling = 0;
-};
 
 struct World
 {
     std::unordered_map<uint32_t, Sector> Sectors = 
     {
         {
+            3,
+            {
+                .walls = {
+                    {
+                        .segment = { { 500, 600 }, { 500, 700 } }, 
+                        .toSector = 1U,
+                        .color = PURPLE,
+                    },
+                    {
+                        .segment = { { 500, 600 }, { 300, 600 } }, 
+                        .color = WHITE,
+                    },
+                    {
+                        .segment = { { 300, 600 }, { 300, 700 } }, 
+                        .color = WHITE,
+                    },
+                    {
+                        .segment = { { 300, 700 }, { 500, 700 } }, 
+                        .color = WHITE,
+                    },
+                },
+                .zFloor = 0.95
+            }
+        },
+        {
             1, 
             {
                 .walls = {
                     {
-                        .segment = { { 500, 500 }, { 500, 700 } }, 
-                        .color = RED,
+                        .segment = { { 500, 500 }, { 500, 600 } }, 
+                        .color = WHITE,
+                    },
+                    {
+                        .segment = { { 500, 700 }, { 500, 600 } }, 
+                        .toSector = 3U,
+                        .color = PURPLE,
                     },
                     { 
                         .segment = { { 500, 700 }, { 700, 700 } }, 
-                        .color = BLUE,
+                        .color = WHITE,
                     },
                     {
                         .segment = { { 500, 500 }, { 700, 700 } },
@@ -51,19 +64,35 @@ struct World
                 .walls = {
                     { 
                         .segment = { { 700, 700 }, { 700, 500 } }, 
-                        .color = GREEN,
+                        .color = WHITE,
                     },
                     {
                         .segment = { { 700, 500 }, { 500, 500 } }, 
-                        .color = YELLOW,
+                        .color = WHITE,
                     },
-                    // {
-                    //     .segment = { { 500, 500 }, { 700, 700 } },
-                    //     .toSector = 1U,
-                    //     .color = PURPLE,
-                    // },
-                }
+                    {
+                        .segment = { { 700, 700 }, { 500, 500 } },
+                        .toSector = 1U,
+                        .color = PURPLE,
+                    },
+                },
+                .floorColor = BLUE,
+                .zCeiling = 0.60f,
+                .zFloor = 0.75f,
             },
         },
     };
 };
+
+inline uint32_t FindSectorOfPoint(Vector2 point, const World& world)
+{
+    for(const auto& [ sectorId, sector ] : world.Sectors)
+    {
+        if(IsPointInSector(point, sector))
+        {
+            return sectorId;
+        }
+    }
+
+    return NULL_SECTOR;
+}

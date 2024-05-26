@@ -43,6 +43,14 @@ public:
         return focused;
     }
 
+    Vector2i GetSize() const
+    {
+        return {
+            .x = cam.renderTexture.texture.width,
+            .y = cam.renderTexture.texture.height,
+        };
+    }
+
 private:
     void MenuBar()
     {

@@ -73,8 +73,8 @@ int main()
     RaycastingCameraViewport cameraViewport(cam);
     MiniMapViewport miniMapViewport(DefaultScreenWidth / 4, DefaultScreenWidth / 4); 
 
-    bool lockFPS = true;
-
+    bool lockFPS = false;
+    
     while (!WindowShouldClose())
     {
         float currentTime = GetTime();
@@ -86,6 +86,7 @@ int main()
         if(IsKeyPressed(KEY_ESCAPE))
         {
             lockFPS = !lockFPS;
+            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
         }
 
         // Update
@@ -103,6 +104,15 @@ int main()
             UpdateCamera(cam, deltaTime);
             SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
         }
+
+        // Update current sector
+        uint32_t currentSectorId = FindSectorOfPoint(cam.position, world);
+        if(NULL_SECTOR != currentSectorId)
+        {
+            cam.currentSector = currentSectorId;
+        }
+
+        // 
 
         // Draw
 

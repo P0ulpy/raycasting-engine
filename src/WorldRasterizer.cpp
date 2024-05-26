@@ -14,6 +14,17 @@ void RasterizeWorld(const World& world, const RaycastingCamera& cam)
         ClearBackground(MY_BLACK);
 
         const uint32_t RenderTargetWidth = cam.renderTexture.texture.width;
+        const uint32_t RenderTargetHeight = cam.renderTexture.texture.height;
+
+        // Dummy sky / ground
+        // {
+        //     float floorVerticalOffset = round(0.5f * RenderTargetHeight * (tanf(cam.pitch)) / tanf(0.5f * cam.fovVectical));
+
+        //     float center = (RenderTargetHeight / 2) - floorVerticalOffset;
+        //     DrawRectangle(0, 0, RenderTargetWidth, center, BLUE);
+        //     DrawRectangle(0, center, RenderTargetWidth, RenderTargetHeight, GRAY);
+        // }
+
 
         RenderAreaYBoundaries yBoundaries;
         yBoundaries.resize(RenderTargetWidth);
@@ -47,6 +58,7 @@ void RasterizeWorld(const World& world, const RaycastingCamera& cam)
             RasterizeInRenderArea(renderStack.top(), renderStack, cam);
         }
     }
+
     EndTextureMode();
 }
 
@@ -56,8 +68,9 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
 
     auto& [ world, sector, renderArea ] = renderContext;
 
-    // to avoid multiple compute of thoses
     int renderAreaHeight = cam.renderTexture.texture.height;
+
+    // to avoid multiple compute
     float floorVerticalOffset = round(0.5f * renderAreaHeight * (tanf(cam.pitch)) / tanf(0.5f * cam.fovVectical));
 
     for(uint32_t x = renderArea.xBegin; x <= renderArea.xEnd; ++x)
@@ -78,6 +91,12 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
             HitInfo hitInfo;
             if(RayToSegmentCollision(rasterRay, wall.segment, hitInfo))
             {
+                if(wall.toSector != NULL_SECTOR 
+                    && PointSegmentSide(cam.position, wall.segment.a, wall.segment.b) <= 0)
+                {
+                    continue;
+                }
+
                 if(bestHitData.distance > hitInfo.distance)
                 {
                     bestHitData = {
@@ -91,49 +110,92 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
 
         if(bestHitData.distance < std::numeric_limits<float>::max())
         {
-            // means this is a slid wall
+            {
+                // Draw floor
+                float centerY = (cam.renderTexture.texture.height / 2) - floorVerticalOffset;
+                DrawLine(x, xBounds.yLow, x, centerY, sector->ceilingColor);
+                // Draw Ceiling
+                DrawLine(x, centerY, x, xBounds.yHigh, sector->floorColor);
+            }
+            
+            // Means this is a slid wall
             if(bestHitData.wall->toSector == NULL_SECTOR)
             {
                 CameraYAxisData cameraWallYData = 
                     ComputeCameraYAxis(cam, x, bestHitData.distance, floorVerticalOffset,
                         xBounds.yHigh,
-                        xBounds.yLow
+                        xBounds.yLow,
+                        sector->zFloor, sector->zCeiling
                     );
 
                 RenderCameraYAxis(cameraWallYData, bestHitData.wall->color);
             }
             else
             {
-                // Render borders acording to sector zceiling & zflor
-                // if(world.Sectors.contains(wall.sectorId))
-                // {
-                //     const Sector& sector = world.Sectors.at(wall.sectorId);
-                //     // TODO : Render top / bottom borders
-                // }
-                // else
-                // {
-                //     std::cerr << "Try to render a window with an invalid SectorID (" << wall.sectorId << ")"<< std::endl;
-                // }
+                if(!world->Sectors.contains(bestHitData.wall->toSector))
+                {
+                    std::cerr << "Try to render a window with an invalid SectorID (" << bestHitData.wall->toSector << ")"<< std::endl;
+                    continue;
+                }
+
+                const Sector& nextSector = world->Sectors.at(bestHitData.wall->toSector);
+
+                //  Render borders acording to sector zceiling & zflor
+
+
+
+                /* --------------- Check if not fixable with yLow yHigh fix ---------------- */
+
+                const Sector* refrenceSector = &nextSector;
+                bool extraBorder = false;
+
+                if(nextSector.zCeiling > sector->zCeiling)
+                {
+                    refrenceSector = sector;
+                    extraBorder = false;
+                }
+                else
+                {
+                    extraBorder = true;
+                }
 
                 auto topBorderRenderData = ComputeCameraYAxis(cam, x, bestHitData.distance, floorVerticalOffset, 
                     xBounds.yHigh,
                     xBounds.yLow,
-                    0, 0.75
-                );
+                    0, refrenceSector->zCeiling
+                );    
+                RenderCameraYAxis(topBorderRenderData, refrenceSector->ceilingColor, extraBorder, true);
 
+                if(nextSector.zFloor > sector->zFloor)
+                {
+                    refrenceSector = sector;
+                    extraBorder = false;
+                }
+                else
+                {
+                    extraBorder = true;
+                }
+                
                 auto bottomBorderRenderData = ComputeCameraYAxis(cam, x, bestHitData.distance, floorVerticalOffset, 
                     xBounds.yHigh,
                     xBounds.yLow,
-                    0.75, 0
+                    refrenceSector->zFloor, 0
                 );
+                RenderCameraYAxis(bottomBorderRenderData, refrenceSector->floorColor, true, extraBorder);
+                
+                /* --------------- [END] Check if not fixable with yLow yHigh fix ---------------- */
 
-                RenderCameraYAxis(topBorderRenderData, PURPLE);
-                RenderCameraYAxis(bottomBorderRenderData, BLUE);
+
 
                 // Apply Y boundaries
 
-                xBounds.yHigh = bottomBorderRenderData.top.y;
-                xBounds.yLow = topBorderRenderData.bottom.y;
+                if(bottomBorderRenderData.top.y < xBounds.yHigh)
+                    xBounds.yHigh = bottomBorderRenderData.top.y;
+                if(bottomBorderRenderData.bottom.y > xBounds.yLow)
+                    xBounds.yLow = topBorderRenderData.bottom.y;
+
+                // Draw a Purple
+                DrawLineV({(float)x, (float)xBounds.yLow}, { (float)x, (float)xBounds.yHigh }, PURPLE);
 
                 // Create / update NextRenderArea
 
@@ -141,7 +203,7 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
                 {
                     SectorRenderContext nextRenderAreaContext = {
                         .world = world,
-                        .sector = &world->Sectors.at(bestHitData.wall->toSector),
+                        .sector = &nextSector,
                         .renderArea = {
                             .xBegin = x,
                             .xEnd = x,
@@ -191,8 +253,8 @@ CameraYAxisData ComputeCameraYAxis(
     
     const float fullSizeTopY = (halfHeightDelta - floorVerticalOffset);
     
-    const float topY    = fullSizeTopY + (objectHeight * topOffsetPercentage);
-    const float bottomY = (fullSizeTopY + objectHeight) - (objectHeight * bottomOffsetPercentage);
+    float topY    = fullSizeTopY + (objectHeight * topOffsetPercentage);
+    float bottomY = (fullSizeTopY + objectHeight) - (objectHeight * bottomOffsetPercentage);
 
     return {
         .top    = { static_cast<float>(renderTargetX), Clamp(topY, YLow, YHigh) }, 
@@ -202,13 +264,19 @@ CameraYAxisData ComputeCameraYAxis(
     };
 }
 
-void RenderCameraYAxis(CameraYAxisData renderData, Color color)
+void RenderCameraYAxis(CameraYAxisData renderData, Color color, bool topBorder, bool bottomBorder)
 {
     uint8_t brightness = Lerp(255, 0, renderData.normalizedDepth);
     
     DrawLineV(
         renderData.top, 
         renderData.bottom, 
-        ColorAlpha255(color, brightness)
+        // ColorAlpha255(color, brightness)
+        color
     );
+
+    if(topBorder)
+        DrawRectangle(renderData.top.x - 1, renderData.top.y - 1, 2, 2, GRAY);
+    if(bottomBorder)
+        DrawRectangle(renderData.bottom.x - 1, renderData.bottom.y - 1, 2, 2, GRAY);
 }

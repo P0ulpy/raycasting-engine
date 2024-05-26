@@ -2,8 +2,14 @@
 
 #include <raylib.h>
 #include <raymath.h>
+
+#include <vector>
+#include <algorithm>
+#include <numeric>
 #include <cmath>
 #include <cstdint>
+
+#include "ColorHelper.hpp"
 
 struct Vector2i
 {
@@ -29,11 +35,27 @@ inline float Vector2DirectionToAngle(Vector2 direction)
 {
     return atan2f(direction.y, direction.x);
 }
-
 struct Segment
 {
     Vector2 a { 0 };
     Vector2 b { 0 };
+};
+
+constexpr uint32_t NULL_SECTOR { static_cast<uint32_t>(-1) };
+struct Wall
+{
+    Segment segment;
+    uint32_t toSector = NULL_SECTOR;
+    Color color = WHITE;
+};
+
+struct Sector
+{
+    std::vector<Wall> walls;
+    Color floorColor = MY_DARK_BLUE;
+    Color ceilingColor = ORANGE;
+    float zCeiling = 1;
+    float zFloor = 1;
 };
 
 struct RasterRay
@@ -106,4 +128,54 @@ inline float RayAngleforScreenX(int screenX, float fov, int renderAreaWidth)
     float angle = -(fov / 2);
 
     return angle + (fovRate * screenX);
+}
+
+// < 0 = right, 0 = on, > 0 = left
+inline constexpr float PointSegmentSide(Vector2 point, Vector2 a, Vector2 b)
+{
+    return -(((point.x - a.x) * (b.y - a.y)) - ((point.y - a.y) * (b.x - a.x)));
+}
+
+inline Vector2 InsidePoint(const std::vector<Wall>& walls)
+{
+    Vector2 insidePoint = std::accumulate(walls.begin(), walls.end(), Vector2(0, 0), 
+        [](const Vector2& a, const Wall& b) { return Vector2Add(a, b.segment.a); });
+
+    float wallsSize = static_cast<float>(walls.size());
+    insidePoint.x /= wallsSize;
+    insidePoint.y /= wallsSize;
+
+    return insidePoint;
+}
+
+inline bool IsPointInSector(Vector2 point, const Sector& sector) 
+{
+    std::vector<Wall> walls(sector.walls);
+
+    // Find a point inside the sector
+    Vector2 insidePoint = InsidePoint(walls);
+
+    // Order the wall segments based on the angle they make with the inside point
+    std::sort(walls.begin(), walls.end(), 
+        [insidePoint](const Wall& a, const Wall& b) 
+        {
+            float angleA = std::atan2(a.segment.a.y - insidePoint.y, a.segment.a.x - insidePoint.x);
+            float angleB = std::atan2(b.segment.a.y - insidePoint.y, b.segment.a.x - insidePoint.x);
+            return angleA < angleB;
+        });
+
+    // Use the ray casting algorithm
+    bool inside = false;
+    for (size_t i = 0, j = walls.size() - 1; i < walls.size(); j = i++) 
+    {
+        Vector2 a = walls[i].segment.a;
+        Vector2 b = walls[j].segment.b;
+        if ((a.y > point.y) != (b.y > point.y) &&
+            (point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x))
+        {
+            inside = !inside;
+        }
+    }
+
+    return inside;
 }

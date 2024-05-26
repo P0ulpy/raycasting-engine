@@ -10,6 +10,7 @@
 struct RaycastingCamera
 {
     Vector2 position { 0 };
+    float elevation  { 0 };
     float yaw        { 0 };
     float pitch      { 0 };
 
@@ -71,8 +72,9 @@ struct RaycastingCamera
         ImGui::Begin("Camera");
         
             ImGui::InputFloat2("position", (float*)(&position));
-            ImGui::SliderFloat("yaw", &yaw, -90, 90);
-            ImGui::SliderAngle("pitch", &pitch);
+            ImGui::InputFloat("z", &elevation, 0.5);
+            ImGui::SliderAngle("yaw", &yaw, -90, 90);
+            ImGui::SliderAngle("pitch", &pitch, -180, 180);
             
             ImGui::SliderFloat("FOV", &fov, 20, 180);
             ImGui::SliderFloat("FOV Vetical", &fovVectical, 20, 180);
@@ -125,6 +127,19 @@ inline void UpdateCamera(RaycastingCamera& cam, float deltaTime)
 
     cam.position = Vector2Add(cam.position, moveDirection);
 
+    // Up / Down
+
+    constexpr float UpDownSpeed = 500.f;
+
+    if(IsKeyDown(KEY_SPACE))
+    {
+        cam.elevation += UpDownSpeed * deltaTime;
+    }
+    if(IsKeyDown(KEY_LEFT_SHIFT))
+    {
+        cam.elevation -= UpDownSpeed * deltaTime;
+    }
+
     // Get the mouse delta (how much the mouse moved since the last frame)
     Vector2 mouseDelta = GetMouseDelta();
 
@@ -144,4 +159,5 @@ inline void UpdateCamera(RaycastingCamera& cam, float deltaTime)
     // Clamp pitch between -(PI / 2) and PI / 2
     if(cam.pitch > PI / 2)  cam.pitch = PI / 2;
     if(cam.pitch < -PI / 2) cam.pitch = -PI / 2;
+    
 }

@@ -20,6 +20,8 @@
 				"preLaunchTask": "CMake build Debug",
 				"program": "${workspaceFolder}/out/Debug/Debug/raycasting-engine-app.exe",
 				"cwd": "${workspaceFolder}/out/Debug/Debug",
+				"requireExactSource": false,
+				"console": "newExternalWindow"
 			},
 			{
 				"name" : "(vsdbg) Release RaycastingEngine",
@@ -28,6 +30,8 @@
 				"preLaunchTask": "CMake build Release",
 				"program": "${workspaceFolder}/out/Release/Release/raycasting-engine-app.exe",
 				"cwd": "${workspaceFolder}/out/Release/Release",
+				"requireExactSource": false,
+				"console": "newExternalWindow"
 			},
 			{
 				"name": "(gdb) Debug RaycastingEngine",
