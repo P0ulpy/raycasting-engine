@@ -27,6 +27,8 @@ RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint
         bound.min  = 0;
     }
     
+    assert(world.Sectors.contains(cam.currentSector), "Try to InitRasterizeWorldContext with an invalid SectorID");
+
     context.renderStack.push({
         .sectorId = cam.currentSector,
         .renderArea = {
