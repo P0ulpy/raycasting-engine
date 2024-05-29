@@ -24,14 +24,6 @@ void ApplicationMainMenuBar()
     {
         if (ImGui::BeginMenu("Menu"))
         {
-            ImGui::MenuItem("Hey !");
-            ImGui::MenuItem("This is the menue !");
-            ImGui::Separator();
-
-            ImGui::MenuItem("And this is");
-            ImGui::MenuItem("The second part of the menue");
-            ImGui::Separator();
-
             if (ImGui::MenuItem("Close"))
             {
                 CloseWindow();
@@ -70,10 +62,10 @@ int main()
         { 550, 600 },
     };
 
-    RaycastingCameraViewport cameraViewport(cam);
+    RaycastingCameraViewport cameraViewport(cam, 1920, 1080);
     MiniMapViewport miniMapViewport(DefaultScreenWidth / 4, DefaultScreenWidth / 4); 
 
-    bool lockFPS = false;
+    bool lockCursor = false;
     
     while (!WindowShouldClose())
     {
@@ -85,7 +77,7 @@ int main()
 
         if(IsKeyPressed(KEY_ESCAPE))
         {
-            lockFPS = !lockFPS;
+            lockCursor = !lockCursor;
             SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
         }
 
@@ -99,7 +91,7 @@ int main()
             SetWindowTitle(windowTitle.c_str());
         }
 
-        if(cameraViewport.IsFocused() && lockFPS)
+        if(cameraViewport.IsFocused() && lockCursor)
         {
             UpdateCamera(cam, deltaTime);
             SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
@@ -112,13 +104,11 @@ int main()
             cam.currentSector = currentSectorId;
         }
 
-        // 
-
         // Draw
 
         BeginDrawing();
 
-            if(cameraViewport.IsFocused() && lockFPS)
+            if(cameraViewport.IsFocused() && lockCursor)
             {
                 HideCursor();
             }
@@ -127,7 +117,7 @@ int main()
                 ShowCursor();
             }
             
-            RasterizeWorld(world, cam);
+            RasterizeWorldInTexture(cameraViewport.GetRenderTexture(), world, cam);
             RenderMinimap(miniMapViewport.GetRendertexture(), world, cam, miniMapViewport.GetZoom());
 
             // Draw GUI

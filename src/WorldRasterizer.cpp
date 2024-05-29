@@ -7,77 +7,73 @@
 #include <iostream>
 #include <unordered_map>
 
-void RasterizeWorld(const World& world, const RaycastingCamera& cam)
+RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam)
 {
-    BeginTextureMode(cam.renderTexture);
+    float FloorVerticalOffset = round(0.5f * RenderTargetHeight * (tanf(cam.pitch)) / tanf(0.5f * cam.fovVectical));
+
+    RasterizeWorldContext context = {
+        .world = world,
+        .cam = cam,
+        .RenderTargetWidth = RenderTargetWidth,
+        .RenderTargetHeight = RenderTargetHeight,
+        .FloorVerticalOffset = FloorVerticalOffset,
+    };
+
+    context.yBoundaries.resize(RenderTargetWidth);
+    
+    for (auto& bound : context.yBoundaries) 
     {
-        ClearBackground(MY_BLACK);
-
-        const uint32_t RenderTargetWidth = cam.renderTexture.texture.width;
-        const uint32_t RenderTargetHeight = cam.renderTexture.texture.height;
-
-        // Dummy sky / ground
-        // {
-        //     float floorVerticalOffset = round(0.5f * RenderTargetHeight * (tanf(cam.pitch)) / tanf(0.5f * cam.fovVectical));
-
-        //     float center = (RenderTargetHeight / 2) - floorVerticalOffset;
-        //     DrawRectangle(0, 0, RenderTargetWidth, center, BLUE);
-        //     DrawRectangle(0, center, RenderTargetWidth, RenderTargetHeight, GRAY);
-        // }
-
-
-        RenderAreaYBoundaries yBoundaries;
-        yBoundaries.resize(RenderTargetWidth);
-        
-        // Init bounds
-        for (auto& bound : yBoundaries) 
-        {
-            bound.yHigh = cam.renderTexture.texture.height;
-            bound.yLow  = 0;
-        }
-
-        std::stack<SectorRenderContext> renderStack;
-        
-        renderStack.push({
-            .world = &world,
-            .sector = &world.Sectors.at(cam.currentSector),
-            .renderArea = {
-                .xBegin = 0,
-                .xEnd = RenderTargetWidth - 1,
-                .yBoundaries = &yBoundaries
-            },
-        });
-
-        size_t maxRenderItr = 25;
-
-        for(size_t i = 0; 
-            0 < renderStack.size() && i < maxRenderItr;
-            ++i
-        )
-        {
-            RasterizeInRenderArea(renderStack.top(), renderStack, cam);
-        }
+        bound.max = RenderTargetHeight;
+        bound.min  = 0;
     }
+    
+    context.renderStack.push({
+        .sectorId = cam.currentSector,
+        .renderArea = {
+            .xBegin = 0,
+            .xEnd = RenderTargetWidth - 1,
+        }
+    });
 
+    return context;
+}
+
+void RasterizeWorldInTexture(const RenderTexture& renderTexture, const World &world, const RaycastingCamera &cam)
+{
+    BeginTextureMode(renderTexture);
+        RasterizeWorld(renderTexture.texture.width, renderTexture.texture.height, world, cam);
     EndTextureMode();
 }
 
-void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorRenderContext>& renderStack, const RaycastingCamera& cam)
+void RasterizeWorld(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam)
 {
-    std::unordered_map<const Wall*, SectorRenderContext> renderAreaToPushInStack;
+    RasterizeWorldContext rasterizeContext = InitRasterizeWorldContext(RenderTargetWidth, RenderTargetHeight, world, cam);
 
-    auto& [ world, sector, renderArea ] = renderContext;
+    ClearBackground(MY_BLACK);
 
-    int renderAreaHeight = cam.renderTexture.texture.height;
+    for(size_t i = 0;
+        0 < rasterizeContext.renderStack.size() && i < cam.maxRenderItr;
+        ++i
+    )
+    {
+        RasterizeInRenderArea(rasterizeContext, rasterizeContext.renderStack.top());
+    }
+}
 
-    // to avoid multiple compute
-    float floorVerticalOffset = round(0.5f * renderAreaHeight * (tanf(cam.pitch)) / tanf(0.5f * cam.fovVectical));
+void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext)
+{
+    std::unordered_map<SectorID, SectorRenderContext> renderAreaToPushInStack;
+
+    auto& [ world, cam, RenderTargetWidth, RenderTargetHeight, FloorVerticalOffset, yBoundaries, renderStack ] = worldContext;
+    const auto& [ sectorId, renderArea ] = renderContext;
+    
+    const Sector& currentSector = world.Sectors.at(sectorId);
 
     for(uint32_t x = renderArea.xBegin; x <= renderArea.xEnd; ++x)
     {
-        RenderAreaYBoundary& xBounds = renderArea.yBoundaries->at(x);
+        RenderAreaYMinMax& yMinMax = yBoundaries.at(x);
 
-        float rayAngle = RayAngleforScreenXCam(x, cam);
+        float rayAngle = RayAngleforScreenXCam(x, cam, RenderTargetWidth);
 
         RasterRay rasterRay = {
             .position = cam.position,
@@ -86,7 +82,7 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
 
         RaycastHitData bestHitData;
 
-        for(const Wall& wall : sector->walls)
+        for(const Wall& wall : currentSector.walls)
         {
             HitInfo hitInfo;
             if(RayToSegmentCollision(rasterRay, wall.segment, hitInfo))
@@ -112,110 +108,55 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
         {
             {
                 // Draw floor
-                float centerY = (cam.renderTexture.texture.height / 2) - floorVerticalOffset;
-                DrawLine(x, xBounds.yLow, x, centerY, sector->ceilingColor);
+                float centerY = (RenderTargetHeight / 2) - FloorVerticalOffset;
+                DrawLine(x, yMinMax.min, x, centerY, currentSector.ceilingColor);
                 // Draw Ceiling
-                DrawLine(x, centerY, x, xBounds.yHigh, sector->floorColor);
+                DrawLine(x, centerY, x, yMinMax.max, currentSector.floorColor);
             }
             
             // Means this is a slid wall
             if(bestHitData.wall->toSector == NULL_SECTOR)
             {
-                CameraYAxisData cameraWallYData = 
-                    ComputeCameraYAxis(cam, x, bestHitData.distance, floorVerticalOffset,
-                        xBounds.yHigh,
-                        xBounds.yLow,
-                        sector->zFloor, sector->zCeiling
+                CameraYLineData cameraWallYData = 
+                    ComputeCameraYAxis(cam, x, bestHitData.distance, FloorVerticalOffset,
+                        RenderTargetWidth, RenderTargetHeight,
+                        yMinMax.max,
+                        yMinMax.min,
+                        currentSector.zFloor, currentSector.zCeiling
                     );
 
-                RenderCameraYAxis(cameraWallYData, bestHitData.wall->color);
+                RenderCameraYLine(cameraWallYData, bestHitData.wall->color);
             }
             else
             {
-                if(!world->Sectors.contains(bestHitData.wall->toSector))
+                if(!world.Sectors.contains(bestHitData.wall->toSector))
                 {
-                    std::cerr << "Try to render a window with an invalid SectorID (" << bestHitData.wall->toSector << ")"<< std::endl;
+                    std::cerr << "Try to render a next sector with an invalid SectorID (" << bestHitData.wall->toSector << ")"<< std::endl;
                     continue;
                 }
 
-                const Sector& nextSector = world->Sectors.at(bestHitData.wall->toSector);
-
-                //  Render borders acording to sector zceiling & zflor
-
-
-
-                /* --------------- Check if not fixable with yLow yHigh fix ---------------- */
-
-                const Sector* refrenceSector = &nextSector;
-                bool extraBorder = false;
-
-                if(nextSector.zCeiling > sector->zCeiling)
-                {
-                    refrenceSector = sector;
-                    extraBorder = false;
-                }
-                else
-                {
-                    extraBorder = true;
-                }
-
-                auto topBorderRenderData = ComputeCameraYAxis(cam, x, bestHitData.distance, floorVerticalOffset, 
-                    xBounds.yHigh,
-                    xBounds.yLow,
-                    0, refrenceSector->zCeiling
-                );    
-                RenderCameraYAxis(topBorderRenderData, refrenceSector->ceilingColor, extraBorder, true);
-
-                if(nextSector.zFloor > sector->zFloor)
-                {
-                    refrenceSector = sector;
-                    extraBorder = false;
-                }
-                else
-                {
-                    extraBorder = true;
-                }
+                const SectorID nextSectorId = bestHitData.wall->toSector;
+                const Sector& nextSector = world.Sectors.at(nextSectorId);
                 
-                auto bottomBorderRenderData = ComputeCameraYAxis(cam, x, bestHitData.distance, floorVerticalOffset, 
-                    xBounds.yHigh,
-                    xBounds.yLow,
-                    refrenceSector->zFloor, 0
-                );
-                RenderCameraYAxis(bottomBorderRenderData, refrenceSector->floorColor, true, extraBorder);
-                
-                /* --------------- [END] Check if not fixable with yLow yHigh fix ---------------- */
-
-
-
-                // Apply Y boundaries
-
-                if(bottomBorderRenderData.top.y < xBounds.yHigh)
-                    xBounds.yHigh = bottomBorderRenderData.top.y;
-                if(bottomBorderRenderData.bottom.y > xBounds.yLow)
-                    xBounds.yLow = topBorderRenderData.bottom.y;
-
-                // Draw a Purple
-                DrawLineV({(float)x, (float)xBounds.yLow}, { (float)x, (float)xBounds.yHigh }, PURPLE);
+                RenderNextRenderAreaBorders(worldContext, yMinMax, currentSector, nextSector, x, bestHitData.distance);
 
                 // Create / update NextRenderArea
 
-                if(!renderAreaToPushInStack.contains(bestHitData.wall))
+                if(!renderAreaToPushInStack.contains(nextSectorId))
                 {
                     SectorRenderContext nextRenderAreaContext = {
-                        .world = world,
-                        .sector = &nextSector,
+                        .sectorId = nextSectorId,
                         .renderArea = {
                             .xBegin = x,
-                            .xEnd = x,
-                            .yBoundaries = renderArea.yBoundaries
-                        }
+                            .xEnd = x
+                        },
                     };
 
-                    renderAreaToPushInStack.emplace(bestHitData.wall, nextRenderAreaContext);
+                    renderAreaToPushInStack.emplace(nextSectorId, nextRenderAreaContext);
                 }
                 else
                 {
-                    renderAreaToPushInStack[bestHitData.wall].renderArea.xEnd = x;
+                    renderAreaToPushInStack[nextSectorId].renderArea.xEnd = x;
                 }
             }
         }
@@ -230,15 +171,55 @@ void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorR
     }
 }
 
-CameraYAxisData ComputeCameraYAxis(
-    const RaycastingCamera& cam, uint32_t renderTargetX, float hitDistance, float floorVerticalOffset,
+void RenderNextRenderAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance)
+{
+    {
+        bool nextSectCelingHigher = nextSector.zCeiling >= currentSector.zCeiling;
+
+        const Sector& zSizesSector = (nextSectCelingHigher) ? currentSector : nextSector;
+        const Color upperBorderColor = (nextSectCelingHigher) ? currentSector.ceilingColor : nextSector.topBorderColor;
+        bool topBorder = !nextSectCelingHigher;
+
+        CameraYLineData topBorderLineData = ComputeCameraYAxis(worldContext.cam, x, hitDistance, worldContext.FloorVerticalOffset, 
+            worldContext.RenderTargetWidth, worldContext.RenderTargetHeight,
+            yMinMax.max, yMinMax.min,
+            0, zSizesSector.zCeiling
+        );
+        RenderCameraYLine(topBorderLineData, upperBorderColor, topBorder, true);
+
+        // Apply Y min
+        yMinMax.min = topBorderLineData.bottom.y;
+    }
+
+    {
+        bool nextSectFloorHigher = nextSector.zFloor >= currentSector.zFloor;
+
+        const Sector& zSizesSector = (nextSectFloorHigher) ? currentSector : nextSector;
+        const Color lowerBorderColor = (nextSectFloorHigher) ? currentSector.floorColor : nextSector.bottomBorderColor;
+        bool bottomBorder = !nextSectFloorHigher;
+
+        CameraYLineData bottomBorderLineData = ComputeCameraYAxis(worldContext.cam, x, hitDistance, worldContext.FloorVerticalOffset, 
+            worldContext.RenderTargetWidth, worldContext.RenderTargetHeight,
+            yMinMax.max, yMinMax.min,
+            zSizesSector.zFloor, 0
+        );
+        RenderCameraYLine(bottomBorderLineData, lowerBorderColor, true, bottomBorder);
+
+        // Apply Y max
+        yMinMax.max = bottomBorderLineData.top.y;
+    }
+
+    // Draw a Purple placeholder where next sector will be drawn
+    DrawLineV({(float)x, (float)yMinMax.min}, { (float)x, (float)yMinMax.max }, PURPLE);
+}
+
+CameraYLineData ComputeCameraYAxis(
+    const RaycastingCamera& cam, uint32_t renderTargetX, float hitDistance, float FloorVerticalOffset,
+    uint32_t RenderTargetWidth, uint32_t RenderTargetHeight,
     uint32_t YHigh, uint32_t YLow,
     float topOffsetPercentage, float bottomOffsetPercentage
 )
 {
-    const int RenderTargetWidth = cam.renderTexture.texture.width;
-    const int RenderTargetHeight = cam.renderTexture.texture.height;
-
     const float depth = Clamp(hitDistance, 0, cam.farPlaneDistance);
     // Normalize distance to [0, 1]
     const float normalizedDepth = depth / cam.farPlaneDistance;
@@ -251,7 +232,7 @@ CameraYAxisData ComputeCameraYAxis(
     const float heightDelta = RenderTargetHeight - objectHeight;
     const float halfHeightDelta = heightDelta / 2;
     
-    const float fullSizeTopY = (halfHeightDelta - floorVerticalOffset);
+    const float fullSizeTopY = (halfHeightDelta - FloorVerticalOffset);
     
     float topY    = fullSizeTopY + (objectHeight * topOffsetPercentage);
     float bottomY = (fullSizeTopY + objectHeight) - (objectHeight * bottomOffsetPercentage);
@@ -264,7 +245,7 @@ CameraYAxisData ComputeCameraYAxis(
     };
 }
 
-void RenderCameraYAxis(CameraYAxisData renderData, Color color, bool topBorder, bool bottomBorder)
+void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder, bool bottomBorder)
 {
     uint8_t brightness = Lerp(255, 0, renderData.normalizedDepth);
     

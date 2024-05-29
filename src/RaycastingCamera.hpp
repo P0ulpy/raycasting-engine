@@ -20,30 +20,13 @@ struct RaycastingCamera
     float farPlaneDistance  = 1000.0f;
     float nearPlaneDistance = 100.f;
 
-    RenderTexture2D renderTexture;
+    size_t maxRenderItr { 25 };
 
     uint32_t currentSector = 1;
 
     RaycastingCamera(Vector2 position = { 0 })
         : position(position)
-        , renderTexture(LoadRenderTexture(GetScreenWidth(), GetScreenHeight()))
     {}
-
-    RaycastingCamera(int renderTextureWidth, int renderTextureHeight, Vector2 position = { 0 })
-        : position(position)
-        , renderTexture(LoadRenderTexture(renderTextureWidth, renderTextureHeight))
-    {}
-
-    ~RaycastingCamera()
-    {
-        UnloadRenderTexture(renderTexture);
-    }
-
-    void UpdateRenderTextureSize(int width, int height)
-    {
-        UnloadRenderTexture(renderTexture);
-        renderTexture = LoadRenderTexture(width, height);
-    }
 
     Vector2 Forward()
     {
@@ -82,15 +65,17 @@ struct RaycastingCamera
             ImGui::SliderFloat("Far plane Distance", &farPlaneDistance, 1, 5000);
             ImGui::SliderFloat("Near plane Distance", &nearPlaneDistance, 1, 500);
 
-            ImGui::InputInt("Current Sector", (int*)(&currentSector));
+            ImGui::InputInt("Max render itr", (int*)&maxRenderItr);
+
+            ImGui::InputInt("Current Sector", (int*)&currentSector);
 
         ImGui::End();
     }
 };
 
-inline float RayAngleforScreenXCam(int screenX, const RaycastingCamera& cam)
+inline float RayAngleforScreenXCam(int screenX, const RaycastingCamera& cam, uint32_t RenderTargetWidth)
 {
-    float fovRate = cam.fov / cam.renderTexture.texture.width;
+    float fovRate = cam.fov / RenderTargetWidth;
     float angle = -(cam.fov / 2);
 
     return angle + (fovRate * screenX);

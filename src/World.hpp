@@ -6,7 +6,7 @@
 
 struct World
 {
-    std::unordered_map<uint32_t, Sector> Sectors = 
+    std::unordered_map<SectorID, Sector> Sectors = 
     {
         {
             3,
@@ -77,6 +77,7 @@ struct World
                     },
                 },
                 .floorColor = BLUE,
+                .ceilingColor = RED,
                 .zCeiling = 0.60f,
                 .zFloor = 0.75f,
             },

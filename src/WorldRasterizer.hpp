@@ -9,28 +9,42 @@
 #include "RaycastingCamera.hpp"
 #include "World.hpp"
 
-struct RenderAreaYBoundary
+struct RenderAreaYMinMax
 {
-    uint32_t yHigh = 0;
-    uint32_t yLow  = 0;
+    uint32_t max = 0;
+    uint32_t min  = 0;
 };
 
-using RenderAreaYBoundaries = std::vector<RenderAreaYBoundary>;
+using RenderAreaYBoundaries = std::vector<RenderAreaYMinMax>;
 struct RenderArea
 {
-    uint32_t xBegin;
-    uint32_t xEnd;
-    RenderAreaYBoundaries* yBoundaries = nullptr;
+    uint32_t xBegin { 0 };
+    uint32_t xEnd   { 0 };
 };
 
 struct SectorRenderContext
 {
-    const World* world;
-    const Sector* sector;
+    const SectorID sectorId { 0 };
     RenderArea renderArea;
 };
 
-void RasterizeWorld(const World& world, const RaycastingCamera& cam);
+struct RasterizeWorldContext 
+{
+    const World& world;
+    const RaycastingCamera& cam;
+    const uint32_t RenderTargetWidth; 
+    const uint32_t RenderTargetHeight;
+    const float FloorVerticalOffset;
+    
+    RenderAreaYBoundaries yBoundaries;
+    std::stack<SectorRenderContext> renderStack;
+};
+
+RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam);
+
+void RasterizeWorldInTexture(const RenderTexture& renderTexture, const World& world, const RaycastingCamera& cam);
+
+void RasterizeWorld(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam);
 
 struct RaycastHitData 
 {
@@ -39,9 +53,10 @@ struct RaycastHitData
     const Wall* wall = nullptr;
 };
 
-void RasterizeInRenderArea(SectorRenderContext renderContext, std::stack<SectorRenderContext>& renderStack, const RaycastingCamera& cam);
+void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext);
 
-struct CameraYAxisData
+void RenderNextRenderAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance);
+struct CameraYLineData
 {
     Vector2 top;
     Vector2 bottom;
@@ -49,10 +64,11 @@ struct CameraYAxisData
     float normalizedDepth;
 };
 
-CameraYAxisData ComputeCameraYAxis(
-    const RaycastingCamera& cam, uint32_t renderTargetX, float hitDistance, float floorVerticalOffset,
+CameraYLineData ComputeCameraYAxis(
+    const RaycastingCamera& cam, uint32_t renderTargetX, float hitDistance, float FloorVerticalOffset,
+    uint32_t RenderTargetWidth, uint32_t RenderTargetHeight,
     uint32_t YHigh, uint32_t YLow,
     float topOffsetPercentage = 0, float bottomOffsetPercentage = 0
 );
 
-void RenderCameraYAxis(CameraYAxisData renderData, Color color, bool topBorder = true, bool bottomBorder = false);
+void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder = true, bool bottomBorder = false);

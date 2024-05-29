@@ -41,11 +41,13 @@ struct Segment
     Vector2 b { 0 };
 };
 
-constexpr uint32_t NULL_SECTOR { static_cast<uint32_t>(-1) };
+using SectorID = uint32_t;
+
+constexpr SectorID NULL_SECTOR { static_cast<SectorID>(-1) };
 struct Wall
 {
     Segment segment;
-    uint32_t toSector = NULL_SECTOR;
+    SectorID toSector = NULL_SECTOR;
     Color color = WHITE;
 };
 
@@ -53,7 +55,9 @@ struct Sector
 {
     std::vector<Wall> walls;
     Color floorColor = MY_DARK_BLUE;
-    Color ceilingColor = ORANGE;
+    Color ceilingColor = MY_BEIGE;
+    Color topBorderColor = MY_PURPLE;
+    Color bottomBorderColor = MY_RED;
     float zCeiling = 1;
     float zFloor = 1;
 };
