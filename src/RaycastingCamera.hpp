@@ -22,7 +22,7 @@ struct RaycastingCamera
 
     size_t maxRenderItr { 25 };
 
-    uint32_t currentSector = 1;
+    uint32_t currentSectorId = 1;
 
     RaycastingCamera(Vector2 position = { 0 })
         : position(position)
@@ -54,10 +54,10 @@ struct RaycastingCamera
     {
         ImGui::Begin("Camera");
         
-            ImGui::InputFloat2("position", (float*)(&position));
+            ImGui::InputFloat2("position", (float*)&position);
             ImGui::InputFloat("z", &elevation, 0.5);
-            ImGui::SliderAngle("yaw", &yaw, -90, 90);
-            ImGui::SliderAngle("pitch", &pitch, -180, 180);
+            ImGui::SliderAngle("yaw", &yaw, 0, 360);
+            ImGui::SliderAngle("pitch", &pitch, -90, 90);
             
             ImGui::SliderFloat("FOV", &fov, 20, 180);
             ImGui::SliderFloat("FOV Vetical", &fovVectical, 20, 180);
@@ -67,7 +67,7 @@ struct RaycastingCamera
 
             ImGui::InputInt("Max render itr", (int*)&maxRenderItr);
 
-            ImGui::InputInt("Current Sector", (int*)&currentSector);
+            ImGui::InputInt("Current Sector", (int*)&currentSectorId);
 
         ImGui::End();
     }

@@ -6,14 +6,16 @@
 #include <rlImGui.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include "ImGuiStyle.hpp"
 
+#include "World.hpp"
 #include "RaycastingMath.hpp"
 #include "RaycastingCamera.hpp"
 #include "ColorHelper.hpp"
-#include "World.hpp"
 #include "WorldRasterizer.hpp"
 #include "RaycastingCameraViewport.hpp"
 #include "MiniMapViewport.hpp"
+#include "RenderingOrchestrator.hpp"
 
 constexpr int DefaultScreenWidth = 1720;
 constexpr int DefaultScreenHeight = 880;
@@ -48,13 +50,14 @@ int main()
     imguiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     imguiIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     imguiIO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    SetupImGuiStyle();
 
     SetTargetFPS(144);
 
+    /// Global
+    
     float deltaTime = 0;
     float lastFrameTime = GetTime();
-
-    /// Global
     
     World world;
 
@@ -64,6 +67,8 @@ int main()
 
     RaycastingCameraViewport cameraViewport(cam, 1920, 1080);
     MiniMapViewport miniMapViewport(DefaultScreenWidth / 4, DefaultScreenWidth / 4); 
+
+    RenderingOrchestrator renderingOrchestrator(cameraViewport);
 
     bool lockCursor = false;
     
@@ -101,7 +106,7 @@ int main()
         uint32_t currentSectorId = FindSectorOfPoint(cam.position, world);
         if(NULL_SECTOR != currentSectorId)
         {
-            cam.currentSector = currentSectorId;
+            cam.currentSectorId = currentSectorId;
         }
 
         // Draw
@@ -117,8 +122,8 @@ int main()
                 ShowCursor();
             }
             
-            RasterizeWorldInTexture(cameraViewport.GetRenderTexture(), world, cam);
-            RenderMinimap(miniMapViewport.GetRendertexture(), world, cam, miniMapViewport.GetZoom());
+            renderingOrchestrator.Render(world, cam);
+            miniMapViewport.Render(world, cam);
 
             // Draw GUI
             
@@ -132,6 +137,7 @@ int main()
                 cam.DrawGUI();
                 cameraViewport.DrawGUI();
                 miniMapViewport.DrawGUI();
+                renderingOrchestrator.DrawGUI();
 
             rlImGuiEnd();
 

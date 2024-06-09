@@ -6,6 +6,8 @@
 
 struct World
 {
+    World();
+
     std::unordered_map<SectorID, Sector> Sectors = 
     {
         {
@@ -14,8 +16,7 @@ struct World
                 .walls = {
                     {
                         .segment = { { 500, 600 }, { 500, 700 } }, 
-                        .toSector = 1U,
-                        .color = PURPLE,
+                        .toSector = 1U
                     },
                     {
                         .segment = { { 500, 600 }, { 300, 600 } }, 
@@ -52,8 +53,7 @@ struct World
                     },
                     {
                         .segment = { { 500, 500 }, { 700, 700 } },
-                        .toSector = 2U,
-                        .color = PURPLE,
+                        .toSector = 2U
                     },
                 }
             },
@@ -72,28 +72,19 @@ struct World
                     },
                     {
                         .segment = { { 700, 700 }, { 500, 500 } },
-                        .toSector = 1U,
-                        .color = PURPLE,
+                        .toSector = 1U
                     },
                 },
-                .floorColor = BLUE,
-                .ceilingColor = RED,
+                .floorColor = RED,
+                .ceilingColor = BLUE,
                 .zCeiling = 0.60f,
                 .zFloor = 0.75f,
             },
         },
     };
+
+    void InitWorld();
 };
 
-inline uint32_t FindSectorOfPoint(Vector2 point, const World& world)
-{
-    for(const auto& [ sectorId, sector ] : world.Sectors)
-    {
-        if(IsPointInSector(point, sector))
-        {
-            return sectorId;
-        }
-    }
-
-    return NULL_SECTOR;
-}
+void RearrangeWallListToPolygon(std::vector<Wall>& walls);
+uint32_t FindSectorOfPoint(Vector2 point, const World& world);

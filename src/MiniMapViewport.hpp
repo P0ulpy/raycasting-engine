@@ -8,6 +8,7 @@
 
 #include "World.hpp"
 #include "RaycastingCamera.hpp"
+#include "DrawingHelper.hpp"
 
 class MiniMapViewport
 {
@@ -15,6 +16,39 @@ public:
     MiniMapViewport(int width, int height)
         : renderTexture(LoadRenderTexture(width, height))
     {}
+
+    void Render(World& world, RaycastingCamera& cam)
+    {
+        Camera2D minimapCamera = { 0 };
+        minimapCamera.target = cam.position;
+        minimapCamera.offset = { (float)renderTexture.texture.width / 2, (float)renderTexture.texture.height / 2 };
+        minimapCamera.rotation = 0.0f;
+        minimapCamera.zoom = zoom;
+
+        BeginTextureMode(renderTexture);
+            
+            BeginMode2D(minimapCamera);
+
+                ClearBackground(LIGHTGRAY);
+
+                Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 50));
+                DrawLineV(cam.position, camHeadingDirectionPoint, RED);
+                DrawCircleV(cam.position, 10, GREEN);
+
+                for(const auto& [ sectorId, sector ] : world.Sectors)
+                {
+                    // DrawSectorAsPolygon(sector, BLUE);
+
+                    for(const auto& wall : sector.walls)
+                    {
+                        DrawLineV(wall.segment.a, wall.segment.b, wall.color);
+                    }
+                }
+
+            EndMode2D();
+
+        EndTextureMode();
+    }
 
     void DrawGUI()
     {
@@ -31,13 +65,14 @@ public:
             }
 
             rlImGuiImageRenderTextureFit(&renderTexture, true);
-            
+
             ImGui::End();
         }
 
         ImGui::PopStyleVar();
     }
 
+public:
     RenderTexture2D& GetRendertexture() { return renderTexture; }
     float GetZoom() const { return zoom; }
 
@@ -45,36 +80,5 @@ private:
     RenderTexture2D renderTexture { 0 };
 
     bool focused = false;
-    float zoom = 1.f;
+    float zoom = 0.3f;
 };
-
-void RenderMinimap(RenderTexture2D& targetTexture, World& world, RaycastingCamera& cam, float zoom)
-{
-    Camera2D minimapCamera = { 0 };
-    minimapCamera.target = cam.position;
-    minimapCamera.offset = { (float)targetTexture.texture.width / 2, (float)targetTexture.texture.height / 2 };
-    minimapCamera.rotation = 0.0f;
-    minimapCamera.zoom = zoom;
-
-    BeginTextureMode(targetTexture);
-        
-        BeginMode2D(minimapCamera);
-
-            ClearBackground(LIGHTGRAY);
-
-            Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 50));
-            DrawLineV(cam.position, camHeadingDirectionPoint, RED);
-            DrawCircleV(cam.position, 10, GREEN);
-
-            for(const auto& [ key, sector ] : world.Sectors)
-            {
-                for(const auto& wall : sector.walls)
-                {
-                    DrawLineV(wall.segment.a, wall.segment.b, wall.color);
-                }
-            }
-
-        EndMode2D();
-
-    EndTextureMode();
-}

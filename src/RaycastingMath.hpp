@@ -140,7 +140,7 @@ inline constexpr float PointSegmentSide(Vector2 point, Vector2 a, Vector2 b)
     return -(((point.x - a.x) * (b.y - a.y)) - ((point.y - a.y) * (b.x - a.x)));
 }
 
-inline Vector2 InsidePoint(const std::vector<Wall>& walls)
+inline Vector2 FindInsidePoint(const std::vector<Wall>& walls)
 {
     Vector2 insidePoint = std::accumulate(walls.begin(), walls.end(), Vector2(0, 0), 
         [](const Vector2& a, const Wall& b) { return Vector2Add(a, b.segment.a); });
@@ -154,19 +154,7 @@ inline Vector2 InsidePoint(const std::vector<Wall>& walls)
 
 inline bool IsPointInSector(Vector2 point, const Sector& sector) 
 {
-    std::vector<Wall> walls(sector.walls);
-
-    // Find a point inside the sector
-    Vector2 insidePoint = InsidePoint(walls);
-
-    // Order the wall segments based on the angle they make with the inside point
-    std::sort(walls.begin(), walls.end(), 
-        [insidePoint](const Wall& a, const Wall& b) 
-        {
-            float angleA = std::atan2(a.segment.a.y - insidePoint.y, a.segment.a.x - insidePoint.x);
-            float angleB = std::atan2(b.segment.a.y - insidePoint.y, b.segment.a.x - insidePoint.x);
-            return angleA < angleB;
-        });
+    const std::vector<Wall>& walls = sector.walls;
 
     // Use the ray casting algorithm
     bool inside = false;

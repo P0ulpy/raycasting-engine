@@ -2,9 +2,8 @@
 
 #include <raylib.h>
 
-#include <limits>
 #include <stack>
-#include <vector>
+#include <functional>
 
 #include "RaycastingCamera.hpp"
 #include "World.hpp"
@@ -35,6 +34,7 @@ struct RasterizeWorldContext
     const uint32_t RenderTargetWidth; 
     const uint32_t RenderTargetHeight;
     const float FloorVerticalOffset;
+    const float CamCurrentSectorElevationOffset;
     
     RenderAreaYBoundaries yBoundaries;
     std::stack<SectorRenderContext> renderStack;
@@ -53,9 +53,11 @@ struct RaycastHitData
     const Wall* wall = nullptr;
 };
 
-void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext);
+using RenderNextAreaBordersCallback = std::function<void(RasterizeWorldContext&, RenderAreaYMinMax&, const Sector&, const Sector&, uint32_t, float)>;
 
-void RenderNextRenderAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance);
+void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext, RenderNextAreaBordersCallback renderNextAreaBordersCallback);
+
+void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance);
 struct CameraYLineData
 {
     Vector2 top;
@@ -65,10 +67,14 @@ struct CameraYLineData
 };
 
 CameraYLineData ComputeCameraYAxis(
-    const RaycastingCamera& cam, uint32_t renderTargetX, float hitDistance, float FloorVerticalOffset,
+    const RaycastingCamera& cam, uint32_t renderTargetX, float hitDistance, 
+    float FloorVerticalOffset, float CamCurrentSectorElevationOffset,
     uint32_t RenderTargetWidth, uint32_t RenderTargetHeight,
     uint32_t YHigh, uint32_t YLow,
     float topOffsetPercentage = 0, float bottomOffsetPercentage = 0
 );
+
+float ComputeVerticalOffset(const RaycastingCamera& cam, uint32_t RenderTargetHeight);
+float ComputeElevationOffset(const RaycastingCamera& cam, const World& world, uint32_t RenderTargetHeight);
 
 void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder = true, bool bottomBorder = false);
