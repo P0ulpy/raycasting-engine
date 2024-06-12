@@ -16,6 +16,7 @@
 #include "RaycastingCameraViewport.hpp"
 #include "MiniMapViewport.hpp"
 #include "RenderingOrchestrator.hpp"
+#include "Editor/WorldEditor.hpp"
 
 constexpr int DefaultScreenWidth = 1720;
 constexpr int DefaultScreenHeight = 880;
@@ -67,6 +68,7 @@ int main()
 
     RaycastingCameraViewport cameraViewport(cam, 1920, 1080);
     MiniMapViewport miniMapViewport(DefaultScreenWidth / 4, DefaultScreenWidth / 4); 
+    WorldEditor worldEditor(world);
 
     RenderingOrchestrator renderingOrchestrator(cameraViewport);
 
@@ -96,18 +98,21 @@ int main()
             SetWindowTitle(windowTitle.c_str());
         }
 
-        if(cameraViewport.IsFocused() && lockCursor)
         {
-            UpdateCamera(cam, deltaTime);
-            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+            // Update current sector
+            uint32_t currentSectorId = FindSectorOfPoint(cam.position, world);
+            if(NULL_SECTOR != currentSectorId)
+            {
+                cam.currentSectorId = currentSectorId;
+            }
         }
 
-        // Update current sector
-        uint32_t currentSectorId = FindSectorOfPoint(cam.position, world);
-        if(NULL_SECTOR != currentSectorId)
+        if(cameraViewport.IsFocused() && lockCursor)
         {
-            cam.currentSectorId = currentSectorId;
+            cam.Update(deltaTime);
         }
+
+        worldEditor.Update(deltaTime);
 
         // Draw
 
@@ -122,8 +127,9 @@ int main()
                 ShowCursor();
             }
             
-            renderingOrchestrator.Render(world, cam);
             miniMapViewport.Render(world, cam);
+            worldEditor.Render(cam);
+            renderingOrchestrator.Render(world, cam);
 
             // Draw GUI
             
@@ -134,10 +140,24 @@ int main()
                 ImGui::DockSpaceOverViewport();
                 ApplicationMainMenuBar();
                 
-                cam.DrawGUI();
-                cameraViewport.DrawGUI();
-                miniMapViewport.DrawGUI();
-                renderingOrchestrator.DrawGUI();
+                {
+                    ImGui::Begin("Game Player");
+                        ImGuiID gamePlayerDockerSpace = ImGui::GetID("gamePlayerDockerSpace");
+                        ImGui::DockSpace(gamePlayerDockerSpace);
+                    ImGui::End();
+
+                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
+                    cam.DrawGUI();
+                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
+                    cameraViewport.DrawGUI();
+                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
+                    miniMapViewport.DrawGUI();
+                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
+                    renderingOrchestrator.DrawGUI();
+                }
+                {
+                    worldEditor.DrawGUI();
+                }
 
             rlImGuiEnd();
 

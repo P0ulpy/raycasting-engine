@@ -65,9 +65,8 @@ public:
             }
 
             rlImGuiImageRenderTextureFit(&renderTexture, true);
-
-            ImGui::End();
         }
+        ImGui::End();
 
         ImGui::PopStyleVar();
     }

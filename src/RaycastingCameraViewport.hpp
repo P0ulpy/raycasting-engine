@@ -18,7 +18,7 @@ public:
         UnloadRenderTexture(renderTexture);
     }
 
-    void UpdateRenderTextureSize(int width, int height)
+    void ResizeRenderTextureSize(int width, int height)
     {
         UnloadRenderTexture(renderTexture);
         renderTexture = LoadRenderTexture(width, height);
@@ -38,7 +38,7 @@ public:
                 ImVec2 windowSize = ImGui::GetWindowSize();
                 if(windowSize.x != renderTexture.texture.width || windowSize.y != renderTexture.texture.height)
                 {
-                    UpdateRenderTextureSize(windowSize.x, windowSize.y);
+                    ResizeRenderTextureSize(windowSize.x, windowSize.y);
                 }
             }
 
@@ -47,6 +47,7 @@ public:
             rlImGuiImageRenderTextureFit(&renderTexture, true);
         }
         ImGui::End();
+
         ImGui::PopStyleVar();
     }
 
@@ -66,12 +67,12 @@ private:
             {
                 if(ImGui::MenuItem("1920x1080 (16:9)"))
                 {
-                    UpdateRenderTextureSize(1920, 1080);
+                    ResizeRenderTextureSize(1920, 1080);
                     autoResize = false;
                 }
                 if(ImGui::MenuItem("720x480 (4:3)"))
                 {
-                    UpdateRenderTextureSize(720, 480);
+                    ResizeRenderTextureSize(720, 480);
                     autoResize = false;
                 }
                 if(ImGui::MenuItem("Fit to window size"))
@@ -79,7 +80,7 @@ private:
                     ImVec2 windowSize = ImGui::GetWindowSize();
                     if(windowSize.x != renderTexture.texture.width || windowSize.y != renderTexture.texture.height)
                     {
-                        UpdateRenderTextureSize(windowSize.x, windowSize.y);
+                        ResizeRenderTextureSize(windowSize.x, windowSize.y);
                     }
 
                     autoResize = true;

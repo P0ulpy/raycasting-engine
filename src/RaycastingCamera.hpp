@@ -71,6 +71,73 @@ struct RaycastingCamera
 
         ImGui::End();
     }
+
+    void Update(float deltaTime)
+    {
+        Vector2 moveDirection { 0 };
+
+        if(IsKeyDown(KEY_D))
+        {
+            moveDirection = Vector2Add(moveDirection, Right());
+        }
+        if(IsKeyDown(KEY_A))
+        {
+            Vector2 left = Vector2Negate(Right());
+            moveDirection = Vector2Add(moveDirection, left);
+        }
+        if(IsKeyDown(KEY_W))
+        {
+            moveDirection = Vector2Add(moveDirection, Forward());
+        }
+        if(IsKeyDown(KEY_S))
+        {
+            Vector2 backward = Vector2Negate(Forward());
+            moveDirection = Vector2Add(moveDirection, backward);
+        }
+
+        float moveSpeed = 100.f;
+
+        moveDirection = Vector2Normalize(moveDirection);
+        moveDirection = Vector2Scale(moveDirection, moveSpeed);
+        moveDirection = Vector2Scale(moveDirection, deltaTime);
+
+        position = Vector2Add(position, moveDirection);
+
+        // Up / Down
+
+        constexpr float UpDownSpeed = 500.f;
+
+        if(IsKeyDown(KEY_SPACE))
+        {
+            elevation += UpDownSpeed * deltaTime;
+        }
+        if(IsKeyDown(KEY_LEFT_SHIFT))
+        {
+            elevation -= UpDownSpeed * deltaTime;
+        }
+
+        // Get the mouse delta (how much the mouse moved since the last frame)
+        Vector2 mouseDelta = GetMouseDelta();
+
+        // Scale the mouse movement by a sensitivity factor to control the speed of the rotation
+        constexpr float sensitivity = 0.003f;
+        float yawChange = mouseDelta.x * sensitivity;
+        float pitchChange = mouseDelta.y * sensitivity;
+
+        // Update the camera's yaw
+        yaw += yawChange;
+        pitch += pitchChange;
+
+        // Clamp yaw in between 0 and 2 * PI
+        if(yaw > 2 * PI) yaw -= 2 * PI; 
+        if(yaw < 0)      yaw += 2 * PI;
+
+        // Clamp pitch between -(PI / 2) and PI / 2
+        if(pitch > PI / 2)  pitch = PI / 2;
+        if(pitch < -PI / 2) pitch = -PI / 2;
+
+        SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+    }
 };
 
 inline float RayAngleforScreenXCam(int screenX, const RaycastingCamera& cam, uint32_t RenderTargetWidth)
@@ -79,70 +146,4 @@ inline float RayAngleforScreenXCam(int screenX, const RaycastingCamera& cam, uin
     float angle = -(cam.fov / 2);
 
     return angle + (fovRate * screenX);
-}
-
-inline void UpdateCamera(RaycastingCamera& cam, float deltaTime)
-{
-    Vector2 moveDirection { 0 };
-
-    if(IsKeyDown(KEY_D))
-    {
-        moveDirection = Vector2Add(moveDirection, cam.Right());
-    }
-    if(IsKeyDown(KEY_A))
-    {
-        Vector2 left = Vector2Negate(cam.Right());
-        moveDirection = Vector2Add(moveDirection, left);
-    }
-    if(IsKeyDown(KEY_W))
-    {
-        moveDirection = Vector2Add(moveDirection, cam.Forward());
-    }
-    if(IsKeyDown(KEY_S))
-    {
-        Vector2 backward = Vector2Negate(cam.Forward());
-        moveDirection = Vector2Add(moveDirection, backward);
-    }
-
-    float moveSpeed = 100.f;
-
-    moveDirection = Vector2Normalize(moveDirection);
-    moveDirection = Vector2Scale(moveDirection, moveSpeed);
-    moveDirection = Vector2Scale(moveDirection, deltaTime);
-
-    cam.position = Vector2Add(cam.position, moveDirection);
-
-    // Up / Down
-
-    constexpr float UpDownSpeed = 500.f;
-
-    if(IsKeyDown(KEY_SPACE))
-    {
-        cam.elevation += UpDownSpeed * deltaTime;
-    }
-    if(IsKeyDown(KEY_LEFT_SHIFT))
-    {
-        cam.elevation -= UpDownSpeed * deltaTime;
-    }
-
-    // Get the mouse delta (how much the mouse moved since the last frame)
-    Vector2 mouseDelta = GetMouseDelta();
-
-    // Scale the mouse movement by a sensitivity factor to control the speed of the rotation
-    constexpr float sensitivity = 0.003f;
-    float yawChange = mouseDelta.x * sensitivity;
-    float pitchChange = mouseDelta.y * sensitivity;
-
-    // Update the camera's yaw
-    cam.yaw += yawChange;
-    cam.pitch += pitchChange;
-
-    // Clamp yaw in between 0 and 2 * PI
-    if(cam.yaw > 2 * PI) cam.yaw -= 2 * PI; 
-    if(cam.yaw < 0)      cam.yaw += 2 * PI;
-
-    // Clamp pitch between -(PI / 2) and PI / 2
-    if(cam.pitch > PI / 2)  cam.pitch = PI / 2;
-    if(cam.pitch < -PI / 2) cam.pitch = -PI / 2;
-    
 }
