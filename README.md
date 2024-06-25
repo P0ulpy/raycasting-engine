@@ -1,7 +1,6 @@
 # Cmake & vcpkg template
 
 This is a template repository made to quickly set up a project using cmake & vcpkg.
-I usually use Clion as IDE so this repository have a basic .idea configuration
 
 You can change the name of the project in the `CMakeLists.txt` and `vcpkg.json` files.
 
