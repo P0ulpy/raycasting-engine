@@ -42,7 +42,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
   - [~] Sector Editor
   - [ ] Vignet editor
   - [ ] Sprite editor
-  - [ ] 
+ - [ ] Texture Browser
 
 *System*
 - [ ] Project instance cration : being able to create a project witch is using the engine and editor in one click
