@@ -1,7 +1,7 @@
 {
   "name" : "cmake-vcpkg-template",
   "version" : "0.1.0",
-  "builtin-baseline" : "261dd6831673d3b07e5118261f7e161a21d1a759",
+  "builtin-baseline" : "2f7e9e11f2fc18c93763254dfacd4549eae0212e",
   "dependencies" : [
     {
       "name" : "raylib",
