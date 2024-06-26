@@ -58,7 +58,8 @@ This repo toolchain as been created using my [cmake and vcpkg template](https://
 
 `Windows :`
 
-Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with c++ crossplateform extention and [CMake](https://cmake.org/download).
+Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with [C and C++ support](https://learn.microsoft.com/cpp/build/vscpp-step-0-installation?view=msvc-170#step-4---choose-workloads) and [C++ linux development with cmake](https://learn.microsoft.com/cpp/linux/download-install-and-setup-the-linux-development-workload?view=msvc-170#visual-studio-setup).
+Make sure you installed [CMake](https://cmake.org/download) as well.
 
 `GNU/Linux (apt) :`
 
@@ -119,6 +120,11 @@ For exemple with Make generator in Debug mode run your program like that
 # Windows
 .\out\Debug\raycasting-engine.exe
 ```
+
+**Using Visual Studio Code workspace**
+
+If you are using visual studio code you can directly use the project embeded workspace `.vscode/raycasting-engine.code-workspace`.
+You can press `F5` to build and run with debugger gdb or vsdbg (visual studio debugger).
 
 ## Licence
 
