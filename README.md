@@ -58,14 +58,14 @@ This repo toolchain as been created using my [cmake and vcpkg template](https://
 
 `Windows :`
 
-Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/)
+Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with c++ corssplateform extention and [CMake](https://cmake.org/download).
 
 `GNU/Linux (apt) :`
 
 Install necessary build tools and a C/C++ compiler
 ```sh
 sudo apt-get update
-sudo apt-get install build-essential tar curl zip unzip autoconf libtool g++ gcc
+sudo apt-get install cmake build-essential tar curl zip unzip autoconf libtool g++ gcc
 ```
 
 Then run the bootstrap script
