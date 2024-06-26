@@ -58,7 +58,7 @@ This repo toolchain as been created using my [cmake and vcpkg template](https://
 
 `Windows :`
 
-Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with c++ corssplateform extention and [CMake](https://cmake.org/download).
+Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with c++ crossplateform extention and [CMake](https://cmake.org/download).
 
 `GNU/Linux (apt) :`
 
