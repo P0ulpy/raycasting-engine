@@ -1,3 +1,4 @@
+[![CMake Build on multiple platforms](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-multi-platform.yml)
 # Raycasting Engine - A Modern C++ Implementation of a DOOM Style Renderer
 
 Welcome to the Raycasting Engine project, an implementation of a DOOM Style renderer using modern C++ and technologies like raylib and imgui.
