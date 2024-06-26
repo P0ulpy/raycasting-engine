@@ -239,6 +239,8 @@
 		"C_Cpp_Runner.excludeSearch": [
 			"**/build",
 			"**/build/**",
+			"**/out",
+			"**/out/**",
 			"**/.*",
 			"**/.*/**",
 			"**/.vscode",
