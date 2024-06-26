@@ -52,7 +52,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
 
 ## Building the project from sources
 
-This repo toolchain as been created using my (cmake and vcpkg template)[https://github.com/P0ulpy/cmake-vcpkg-template].
+This repo toolchain as been created using my [cmake and vcpkg template](https://github.com/P0ulpy/cmake-vcpkg-template).
 
 ### Bootstrap workspace
 
@@ -122,4 +122,4 @@ For exemple with Make generator in Debug mode run your program like that
 
 ## Licence
 
-This repo is ender MIT Licence, see (LICENSE)[LICENSE].
+This repo is ender MIT Licence, see [LICENSE](LICENSE).
