@@ -18,7 +18,7 @@ The primary goal of this project is to implement a DOOM Style Renderer with a si
 For now the project in a prototyping phase, still mainly focused in making an efficient Renderer.
 
 *Renderer*
-- [x] DOOM Style rendering
+- [x] DOOM Style rendering including :
   - [x] Sectors and top/bottom Elevation
   - [x] Neighbouring sectors sides
   - [ ] Textures for Wall & Borders
@@ -35,10 +35,10 @@ For now the project in a prototyping phase, still mainly focused in making an ef
 *Editor*
 - [x] 3D View
 - [x] Simple inspector for Global world objects (Physics, Camera, etc...)
-- [ ] Rendering Debugger
+- [ ] Rendering Debugger including :
   - [ ] Step by step rendering
   - [ ] Rendering steps visalizer
- - [ ] Map Editor
+ - [ ] Map Editor including :
   - [~] Sector Editor
   - [ ] Vignet editor
   - [ ] Sprite editor
@@ -46,7 +46,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
 
 *System*
 - [ ] Project instance cration : being able to create a project witch is using the engine and editor in one click
-- [ ] Project shiping
+- [ ] Project shiping including :
   - [ ] Release Build
   - [ ] Assets bundle
 
