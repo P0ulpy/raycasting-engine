@@ -23,7 +23,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
   - [x] Neighbouring sectors sides
   - [ ] Textures for Wall & Borders
 - [x] Pitch and Yaw for camera movement
-- [ ] Vignette for sprites rendered on over walls
+- [ ] Vignette for sprites rendered over walls
 - [ ] Entities sprites within the 3D space
 - [ ] Basic Physics including : 
   - [x] Elevation related to sectors 
