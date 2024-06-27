@@ -129,4 +129,4 @@ You can press `F5` to build and run with debugger gdb or vsdbg (visual studio de
 
 ## Licence
 
-This repo is ender MIT Licence, see [LICENSE](LICENSE).
+This project is open-source and available under the [MIT Licence](LICENSE).
