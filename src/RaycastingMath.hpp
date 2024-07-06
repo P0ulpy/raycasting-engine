@@ -11,18 +11,6 @@
 
 #include "ColorHelper.hpp"
 
-struct Vector2i
-{
-    int x { 0 };
-    int y { 0 };
-};
-
-struct Vector2ui
-{
-    unsigned int x { 0 };
-    unsigned int y { 0 };
-};
-
 inline Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
 {
     return {
@@ -142,7 +130,8 @@ inline constexpr float PointSegmentSide(Vector2 point, Vector2 a, Vector2 b)
 
 inline Vector2 FindInsidePoint(const std::vector<Wall>& walls)
 {
-    Vector2 insidePoint = std::accumulate(walls.begin(), walls.end(), Vector2(0, 0), 
+    Vector2 startAt = { 0 };
+    Vector2 insidePoint = std::accumulate(walls.begin(), walls.end(), startAt, 
         [](const Vector2& a, const Wall& b) { return Vector2Add(a, b.segment.a); });
 
     float wallsSize = static_cast<float>(walls.size());

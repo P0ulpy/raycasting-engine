@@ -79,5 +79,5 @@ private:
     RenderTexture2D renderTexture { 0 };
 
     bool focused = false;
-    float zoom = 0.3f;
+    float zoom = 1.f;
 };

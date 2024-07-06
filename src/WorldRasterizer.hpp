@@ -62,8 +62,8 @@ struct CameraYLineData
 {
     Vector2 top;
     Vector2 bottom;
-    float depth;
-    float normalizedDepth;
+    float depth = 0;
+    float normalizedDepth = 0;
 };
 
 CameraYLineData ComputeCameraYAxis(

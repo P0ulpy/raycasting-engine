@@ -17,7 +17,7 @@ struct RaycastingCamera
     float fov         { 60 };
     float fovVectical { 120 };
 
-    float farPlaneDistance  = 1000.0f;
+    float farPlaneDistance  = 900.0f;
     float nearPlaneDistance = 100.f;
 
     size_t maxRenderItr { 25 };

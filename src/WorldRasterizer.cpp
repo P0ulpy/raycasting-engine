@@ -16,7 +16,7 @@ RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint
         .RenderTargetWidth = RenderTargetWidth,
         .RenderTargetHeight = RenderTargetHeight,
         .FloorVerticalOffset = ComputeVerticalOffset(cam, RenderTargetHeight),
-        .CamCurrentSectorElevationOffset = ComputeElevationOffset(cam, world, RenderTargetHeight),
+        .CamCurrentSectorElevationOffset = 0,//ComputeElevationOffset(cam, world, RenderTargetHeight),
     };
 
     context.yBoundaries.resize(RenderTargetWidth);
@@ -272,13 +272,13 @@ CameraYLineData ComputeCameraYAxis(
 
 void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder, bool bottomBorder)
 {
-    uint8_t brightness = Lerp(255, 0, renderData.normalizedDepth);
+    float darkness = Lerp(1, 0, renderData.normalizedDepth);
 
     DrawLineV(
         renderData.top, 
         renderData.bottom, 
-        // ColorAlpha255(color, brightness)
-        color
+        ColorDarken(color, renderData.normalizedDepth)
+        // color
     );
 
     if(topBorder)
