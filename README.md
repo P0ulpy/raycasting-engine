@@ -1,200 +1,133 @@
-# Cmake & vcpkg template
+[![CMake Build Debug](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-debug.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-debug.yml)
+[![CMake Build Release](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-release.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-release.yml)
+# Raycasting Engine - A Modern C++ Implementation of a DOOM Style Renderer
 
-This is a template repository made to quickly set up a project using cmake & vcpkg.
-I usually use Clion as IDE so this repository have a basic .idea configuration
+Welcome to the Raycasting Engine project, an implementation of a DOOM Style renderer using modern C++ and technologies like raylib and imgui.
 
-You can change the name of the project in the `CMakeLists.txt` and `vcpkg.json` files.
+This project is developed in a **recreational programming** context, it does not aim to be *production ready* at some point. It serves as a learning experience to explore new concepts and technologies while creating a project around them.
 
-## Bootstrap workspace
+## Goals
+The primary goal of this project is to implement a DOOM Style Renderer with a simple Engine around it and a Graphical Editor for prototyping Maps, rendering, gameplay etc... I'm using modern C++ and technologies like raylib and imgui it achieve this goal. At the end the engine should be able to build and ship a standalone executable without prototyping tools.
 
-*Windows*
+## Showcase
 
-Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) 
+![Overall Showcase](.github/videos/overall_showcase.mp4)
+![3D View View](.github/images/3D_view.png)
+![Map Editor View](.github/images/map_editor_view.png)
 
-Then run the bootstrap script
-```bat
-.\scripts\bootstrap-workspace.bat
-```
+## Features checklist
 
-*GNU/Linux using apt*
+For now the project in a prototyping phase, still mainly focused in making an efficient Renderer.
+
+*Renderer*
+- [x] DOOM Style rendering including :
+  - [x] Sectors and top/bottom Elevation
+  - [x] Neighbouring sectors sides
+  - [ ] Textures for Wall & Borders
+- [x] Pitch and Yaw for camera movement
+- [ ] Vignette for sprites rendered over walls
+- [ ] Entities sprites within the 3D space
+- [ ] Basic Physics including : 
+  - [x] Elevation related to sectors 
+  - [ ] Simple gravity
+  - [ ] 3D space Raycast
+- [x] Simple shading using far plane distance
+- [ ] Dynamic lighting for light sources
+
+*Editor*
+- [x] 3D View
+- [x] Simple inspector for Global world objects (Physics, Camera, etc...)
+- [ ] Rendering Debugger including :
+  - [ ] Step by step rendering
+  - [ ] Rendering steps visalizer
+ - [ ] Map Editor including :
+  - [~] Sector Editor
+  - [ ] Vignet editor
+  - [ ] Sprite editor
+ - [ ] Texture Browser
+
+*System*
+- [ ] Project instance cration : being able to create a project witch is using the engine and editor in one click
+- [ ] Project shiping including :
+  - [ ] Release Build
+  - [ ] Assets bundle
+
+## Building the project from sources
+
+This repo toolchain as been created using my [cmake and vcpkg template](https://github.com/P0ulpy/cmake-vcpkg-template).
+
+### Bootstrap workspace
+
+`Windows :`
+
+Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with [C and C++ support](https://learn.microsoft.com/cpp/build/vscpp-step-0-installation?view=msvc-170#step-4---choose-workloads) and [C++ linux development with cmake](https://learn.microsoft.com/cpp/linux/download-install-and-setup-the-linux-development-workload?view=msvc-170#visual-studio-setup).
+Make sure you installed [CMake](https://cmake.org/download) as well.
+
+`GNU/Linux (apt) :`
 
 Install necessary build tools and a C/C++ compiler
 ```sh
 sudo apt-get update
-sudo apt-get install build-essential tar curl zip unzip autoconf libtool g++ gcc
+sudo apt-get install cmake build-essential tar curl zip unzip autoconf libtool g++ gcc
 ```
 
 Then run the bootstrap script
 ```sh
+# Unix
 ./scripts/bootstrap-workspace.sh
+# Windows
+.\scripts\bootstrap-workspace.bat
 ```
 
-Well done your repo is now ready to work with cmake and vcpkg !
+*Generate the project :*
 
-## Add dependency
-
-You can add any vcpkg dependencies by editing `vcpkg.json` and then add them to you cmake target with `find_package()` and `target_link_libraries()`. You can found more information about cmake integration in the [vcpkg documentation](https://learn.microsoft.com/vcpkg/users/buildsystems/cmake-integration#using-libraries)
-
-You can found a exemple of adding dependencies in the [Installing dependencies exemple with SFML](#adding-dependencies-exemple-with-sfml-) section.
-
-## Generate your project
-
-Running `generate-cmake-*.sh` will install dependencies if required and then generate your cmake solution.
-
-Use it every times you add a dependency or modify `CMakeLists.txt`
-
-*Windows*
 ```sh
 # For debug build
+# Unix
+./scripts/generate-cmake-debug.sh
+# Windows
 .\scripts\generate-cmake-debug.bat
+
 # For release build
+# Unix
+./scripts/generate-cmake-release.sh
+# Windows
 .\scripts\generate-cmake-release.bat
 ```
 
-*Unix*
-```sh
+*Compile the project :*
+
+```bash
 # For debug build
-./scripts/generate-cmake-debug.sh
-# For release build
-./scripts/generate-cmake-release.sh
-```
-
-## Compile your project
-
-Cmake will atomatically detect your compiler and generator 
-
-*Windows*
-```sh
-# For debug build
+# Unix
+./scripts/build-debug.sh
+# Windows
 .\scripts\build-debug.bat
+
 # For release build
+# Unix
+./scripts/build-release.sh
+# Windows
 .\scripts\build-release.bat
 ```
 
-*Unix*
-```bash
-# For debug build
-./scripts/build-debug.sh
-# For release build
-./scripts/build-release.sh
-```
-
-**Run your program**
+**Run the program**
 You can now run the compiled program by looking into `out/Debug` or `out/Release`.
 The out directory hierarchy will be different depending on your generator.
 
 For exemple with Make generator in Debug mode run your program like that
 ```bash
-# The executable name will change acording to the value set in add_executable(<name>, ...)
-./out/Debug/cmake-vcpkg-template-app
+# Unix
+./out/Debug/raycasting-engine
+# Windows
+.\out\Debug\raycasting-engine.exe
 ```
 
-## Adding dependencies exemple with SFML :
+**Using Visual Studio Code workspace**
 
-In this exemple we will add SFML to our project, make it available in our cmake target and then compile a basic exemple program.
+If you are using visual studio code you can directly use the project embeded workspace `.vscode/raycasting-engine.code-workspace`.
+You can press `F5` to build and run with debugger gdb or vsdbg (visual studio debugger).
 
-**Add dependencies to vcpkg :**
+## Licence
 
-`vcpkg.json`
-```json
-{
-  "name": "cmake-vcpkg-template",
-  "version": "0.1.0",
-  "builtin-baseline": "6ca56aeb457f033d344a7106cb3f9f1abf8f4e98",
-  "dependencies": [
-    {
-      "name" : "sfml",
-      "version>=" : "2.5.1#14"
-    }
-  ]
-}
-```
-
-For further information you can check the [microsoft documentation about vcpkg.json](https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-json) and [vcpkg documentation about manifests dependencies](https://learn.microsoft.com/vcpkg/concepts/manifest-mode)
-
-**Add dependencies to your cmake target :**
-
-Now that we have added our dependencies to vcpkg we can add them to our cmake target.
-First we use `find_package()` to find the package in vcpkg, then we use `target_link_libraries()` to link it to our target, It is important to call it after the target creation (witch is `add_executable` in our case).
-
-`CMakeLists.txt`
-```diff
-...
-+ find_package(SFML COMPONENTS system window graphics network CONFIG REQUIRED)
-
-SET(EXECUTABLE_TARGET_NAME cmake-vcpkg-template-app)
-
-add_executable(${EXECUTABLE_TARGET_NAME}
-    main.cpp
-)
-
-+ target_link_libraries(${EXECUTABLE_TARGET_NAME}
-+     PRIVATE sfml-system sfml-network sfml-graphics sfml-window
-+ )
-...
-```
-
-You must reload your cmake project and reset cache in your IDE or directly with the cmake command to make it work.
-```sh
-./scripts/generate-cmake-debug.sh
-```
-
-**In case of issues while running vcpkg install**
-
-Pay attention at this kind of message of vcpkg :
-```
--- SFML currently requires the following libraries from the system package manager:
-    libudev
-    libx11
-    libxrandr
-    libxcursor
-    opengl
-You can intall them in your system using apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev
-```
-
-Most of the time install issues with vcpkg are related to a dynamic library who are not installed in you system. Most of the time vcpkg explain directly how to install them. 
-
-**Use SFML in our program to make sure our installation is working :**
-
-For this exemple we will use the [SFML tutorial](https://www.sfml-dev.org/tutorials/2.6/start-linux.php#compiling-a-sfml-program) to make sure our installation is working.
-After pasting the exemple code in your `main.cpp` we can now compile our program and run it, you should see a window with a green circle in it and a title "SFML works!".
-
-Congratulations you have successfully installed SFML in your project !
-You can now add any other dependencies you want.
-
-**To go deaper into cmake integration using vcpkg you can start by the** [microsoft documentation for cmake integration using libraries](https://learn.microsoft.com/vcpkg/users/buildsystems/cmake-integration#using-libraries)
-
-## Misc.
-
-### Vcpkg triplets
-
-You can found more information about the vcpkg triplets in the [vcpkg documentation about triplets](https://learn.microsoft.com/fr-fr/vcpkg/users/triplets)
-
-### Updating vcpkg submodule
-
-If you need to update vcpkg or you encounter issues with it you can update the vcpkg submodule with :
-```bash
-git submodule update --remote
-```
-
-After finished it should write in stdout something like :
-```
-Submodule path 'vcpkg': checked out '<new-commit-sha>'
-```
-
-Update the builtin-baseline in `vcpkg.json`
-```diff
-{
-    "name" : "cmake-vcpkg-template",
-    "version" : "0.1.0",
--   "builtin-baseline" : "4874bea8eb8db9e6610672cccdd6ccd5d55c6f1a",
-+   "builtin-baseline" : <new-commit-sha>,
-    "dependencies" : []
-}
-```
-
-And then commit the modification
-```bash
-git add .
-git commit -m "Update vcpkg to it lastest version"
-```
+This project is open-source and available under the [MIT Licence](LICENSE).
