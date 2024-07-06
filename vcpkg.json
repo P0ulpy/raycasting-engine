@@ -1,19 +1,15 @@
 {
-  "name" : "cmake-vcpkg-template",
-  "version" : "0.1.0",
-  "builtin-baseline" : "c9919121dde6f61c0436adda94624636e041226b",
+  "name" : "raycasting-engine",
+  "version-string": "latest",
   "dependencies" : [
     {
-      "name" : "raylib",
-      "version>=" : "5.0"
+      "name" : "raylib"
     },
     {
-      "name" : "raygui",
-      "version>=" : "4.0"
+      "name" : "raygui"
     },
     {
       "name" : "imgui",
-      "version>=" : "1.90",
       "features": [
         "docking-experimental"
       ]
