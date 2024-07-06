@@ -42,9 +42,22 @@ public:
                 }
             }
 
-            focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+            bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+            if(isFocused && !focused)
+            {
+                SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+            }
+
+            focused = isFocused;
+
             // draw the view
             rlImGuiImageRenderTextureFit(&renderTexture, true);
+
+            if(IsFocused() && IsKeyPressed(KEY_ESCAPE))
+            {
+                ImGui::SetFocusID(ImGui::GetID("Game Player"), ImGui::GetCurrentWindow());
+                focused = false;
+            }
         }
         ImGui::End();
 

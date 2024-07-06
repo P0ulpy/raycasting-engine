@@ -5,6 +5,7 @@
 
 #include <rlImGui.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include "ImGuiStyle.hpp"
 
@@ -71,8 +72,6 @@ int main()
     WorldEditor worldEditor(world);
 
     RenderingOrchestrator renderingOrchestrator(cameraViewport);
-
-    bool lockCursor = false;
     
     while (!WindowShouldClose())
     {
@@ -81,12 +80,6 @@ int main()
         lastFrameTime = currentTime;
 
         // Inputs
-
-        if(IsKeyPressed(KEY_ESCAPE))
-        {
-            lockCursor = !lockCursor;
-            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
-        }
 
         // Update
         
@@ -107,9 +100,15 @@ int main()
             }
         }
 
-        if(cameraViewport.IsFocused() && lockCursor)
+        if(cameraViewport.IsFocused())
         {
             cam.Update(deltaTime);
+            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+            HideCursor();
+        }
+        else
+        {
+            ShowCursor();
         }
 
         worldEditor.Update(deltaTime);
@@ -117,15 +116,6 @@ int main()
         // Draw
 
         BeginDrawing();
-
-            if(cameraViewport.IsFocused() && lockCursor)
-            {
-                HideCursor();
-            }
-            else
-            {
-                ShowCursor();
-            }
             
             miniMapViewport.Render(world, cam);
             worldEditor.Render(cam);
