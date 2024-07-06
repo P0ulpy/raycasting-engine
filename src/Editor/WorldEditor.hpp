@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <rlimgui.h>
+#include <rlImGui.h>
 #include <raylib.h>
 
 #include "../World.hpp"
