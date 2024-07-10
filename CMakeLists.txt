@@ -4,7 +4,7 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cm
 project(raycasting-engine)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 SET(APP_TARGET_NAME raycasting-engine-app)
 
@@ -13,8 +13,6 @@ find_package(imgui CONFIG REQUIRED)
 find_path(RAYGUI_INCLUDE_DIRS "raygui.h")
 
 file(GLOB_RECURSE APP_SRC_FILES
-    "src/*.h"
-    "src/*.hpp"
     "src/*.cpp"
 )
 
