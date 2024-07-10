@@ -6,20 +6,22 @@
 
 #include "RaycastingMath.hpp"
 
-void DrawSectorAsPolygon(const Sector& sector, Color color);
-// {
-//     if (sector.walls.size() < 3) 
-//     {
-//         return; // Not a polygon
-//     }
+inline void DrawArrow(Vector2 start, Vector2 end, Color color = RED, float thickness = -1.f, float arrowTipLength = 3, float arrowTipWidth = 2)
+{
+    // Draw arrow line
+    if(thickness <= 0)
+        DrawLineV(start, end, color);
+    else
+        DrawLineEx(start, end, thickness, color);
 
-//     Vector2 firstPoint = sector.walls[0].segment.a;
+    // Draw arrow tip
+    Vector2 arrowDirection = Vector2Normalize(Vector2Subtract(start, end));
+    Vector2 arrowRightPerpDirection = { -arrowDirection.y, arrowDirection.x };
+    Vector2 arrowLeftPerpDirection = { arrowDirection.y, -arrowDirection.x };
+    
+    Vector2 arrowTipEnd = Vector2Add(end, Vector2Scale(arrowDirection, arrowTipLength));
+    Vector2 arrowTipA = Vector2Add(arrowTipEnd, Vector2Scale(arrowRightPerpDirection, arrowTipWidth));
+    Vector2 arrowTipB = Vector2Add(arrowTipEnd, Vector2Scale(arrowLeftPerpDirection, arrowTipWidth));
 
-//     for (size_t i = 1; i < sector.walls.size() - 1; ++i) 
-//     {
-//         Vector2 secondPoint = sector.walls[i].segment.a;
-//         Vector2 thirdPoint = sector.walls[i + 1].segment.a;
-
-//         DrawTriangle(firstPoint, secondPoint, thirdPoint, color);
-//     }
-// }
+    DrawTriangle(end, arrowTipA, arrowTipB, color);
+}

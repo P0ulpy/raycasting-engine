@@ -12,7 +12,11 @@ The primary goal of this project is to implement a DOOM Style Renderer with a si
 ## Showcase
 
 ![Overall Showcase](.github/videos/overall_showcase.mp4)
-![3D View View](.github/images/3D_view.png)
+
+`Editor 3D View`
+![Editor 3D View](.github/images/editor_3d_view.png)
+
+`Map Editor View`
 ![Map Editor View](.github/images/map_editor_view.png)
 
 ## Features checklist
@@ -41,7 +45,13 @@ For now the project in a prototyping phase, still mainly focused in making an ef
   - [ ] Step by step rendering
   - [ ] Rendering steps visalizer
  - [ ] Map Editor including :
-  - [~] Sector Editor
+  - [x] Controls (zoom, move, ...)
+  - [ ] Sector Editor
+    - [x] Elevation editor
+    - [x] Proper sectors rendering
+    - [ ] Sector creation tool
+    - [ ] Wall creation tool
+    - [ ] Portal creation/visualisation tool
   - [ ] Vignet editor
   - [ ] Sprite editor
  - [ ] Texture Browser

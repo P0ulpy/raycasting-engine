@@ -5,8 +5,11 @@
 #include <rlImGui.h>
 #include <raylib.h>
 
+#include <sstream>
+
 #include "../World.hpp"
 #include "../RaycastingCamera.hpp"
+#include "../DrawingHelper.hpp"
 
 class WorldEditor
 {
@@ -14,6 +17,11 @@ public:
     WorldEditor(World& world)
         : world(world)
         , renderTexture(LoadRenderTexture(1920, 1080))
+        , camera({ 
+            .target = { 0 },
+            .rotation = 0.f,
+            .zoom = 1.f,
+        })
     {}
 
     ~WorldEditor()
@@ -25,6 +33,8 @@ public:
     {
         UnloadRenderTexture(renderTexture);
         renderTexture = LoadRenderTexture(width, height);
+
+        camera.offset = { (float)renderTexture.texture.width / 2, (float)renderTexture.texture.height / 2 };
     }
 
     void DrawGUI()
@@ -43,95 +53,181 @@ public:
 
     void Update(float dt)
     {
+        constexpr float MOUSE_DRAG_SENSITIVITY = 1.f;
 
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+        {
+            Vector2 delta = GetMouseDelta();
+            delta = Vector2Scale(delta, -MOUSE_DRAG_SENSITIVITY / camera.zoom);
+            camera.target = Vector2Add(camera.target, delta);
+        }
+
+        constexpr float MOUSE_ZOOM_SENSITIVITY = 1.f;
+
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0)
+        {
+            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
+
+            camera.offset = GetMousePosition();
+            camera.target = mouseWorldPos;
+
+            float scaleFactor = MOUSE_ZOOM_SENSITIVITY + ( 0.25f * fabsf(wheel));
+            if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
+            camera.zoom = Clamp(camera.zoom * scaleFactor, 0.5f, 32.0f);
+        }
     }
 
     void Render(RaycastingCamera& cam)
     {
-        Camera2D minimapCamera = { 0 };
-        minimapCamera.target = cam.position;
-        minimapCamera.offset = { (float)renderTexture.texture.width / 2, (float)renderTexture.texture.height / 2 };
-        minimapCamera.rotation = 0.0f;
-        minimapCamera.zoom = 1.f;//zoom;
-
         BeginTextureMode(renderTexture);
-            
-            BeginMode2D(minimapCamera);
 
-                ClearBackground(LIGHTGRAY);
+            ClearBackground(LIGHTGRAY);
 
-                Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 50));
-                DrawLineV(cam.position, camHeadingDirectionPoint, RED);
-                DrawCircleV(cam.position, 10, GREEN);
+            BeginMode2D(camera);
+
+                DrawBackgroundGrid();
+
+                DrawCam(cam);
+
+                bool noSectorSelected = currentSelectedSector == NULL_SECTOR;
 
                 for(const auto& [ sectorId, sector ] : world.Sectors)
                 {
-                    bool sectorSelected = sectorId == currentSelectedSector;
-                    
-                    Vector2 selectionMin = { (float)renderTexture.texture.width, (float)renderTexture.texture.height };
-                    Vector2 selectionMax = { 0, 0 };
+                    bool thisSectorSelected = !noSectorSelected && (sectorId == currentSelectedSector);
 
                     for(const auto& wall : sector.walls)
                     {
-                        Color color = WHITE;
-                        if(sectorSelected)
-                        {
-                            color = RED;
-                            if(wall.toSector != NULL_SECTOR)
-                            {
-                              color = BLUE;
-                            }
-                        }
-                        else if(wall.toSector != NULL_SECTOR) color = PURPLE;
-
-                        DrawLineV(wall.segment.a, wall.segment.b, color);
-
-                        if(sectorSelected)
-                        {
-                            if(wall.segment.a.x < selectionMin.x)
-                               selectionMin.x = wall.segment.a.x;
-                            if(wall.segment.b.x < selectionMin.x)
-                               selectionMin.x = wall.segment.b.x;
-
-                            if(wall.segment.a.y < selectionMin.y)
-                               selectionMin.y = wall.segment.a.y;
-                            if(wall.segment.b.y < selectionMin.y)
-                               selectionMin.y = wall.segment.b.y;
-
-                            if(wall.segment.a.x > selectionMax.x)
-                               selectionMax.x = wall.segment.a.x;
-                            if(wall.segment.b.x > selectionMax.x)
-                               selectionMax.x = wall.segment.b.x;
-
-                            if(wall.segment.a.y > selectionMax.y)
-                               selectionMax.y = wall.segment.a.y;
-                            if(wall.segment.b.y > selectionMax.y)
-                               selectionMax.y = wall.segment.b.y;
-                        }
-                    }
-
-                    if(sectorSelected)
-                    {
-                        static const float padding = 10;
-
-                        selectionMin.x -= padding;
-                        selectionMin.y -= padding;
-                        selectionMax.x += padding;
-                        selectionMax.y += padding;
-
-                        int width = selectionMax.x - selectionMin.x;
-                        int height = selectionMax.y - selectionMin.y;
-
-                        DrawRectangleLines(selectionMin.x, selectionMin.y, width, height, ColorAlpha(RED, .5f));
+                        DrawWall(wall, noSectorSelected, thisSectorSelected);
                     }
                 }
 
             EndMode2D();
 
+            DrawUI();
+
         EndTextureMode();
     }
 
 private:
+    void DrawCam(const RaycastingCamera& cam) const
+    {
+        Vector2 camHeadingDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Forward(), 15));
+        Vector2 camRightDirectionPoint = Vector2Add(cam.position, Vector2Scale(cam.Right(), 15));
+        DrawArrow(cam.position, camHeadingDirectionPoint, RED);
+        DrawArrow(cam.position, camRightDirectionPoint, GREEN);
+        
+        DrawCircleV(cam.position, 3, BLUE);
+    }
+
+    void DrawBackgroundGrid() const
+    {
+        constexpr int32_t CELL_SIZE = 25;
+        constexpr int32_t GRID_SIZE = 1000;
+
+        const Color GridColor = ColorAlpha(GRAY, .1f);
+
+        // Compute Grid Offset based on camera position
+
+        int32_t rowOffset = (camera.target.x) / CELL_SIZE;
+        int32_t startingRow = -(GRID_SIZE - rowOffset);
+        int32_t endingRow = (GRID_SIZE + rowOffset);
+
+        int32_t colOffset = (camera.target.y) / CELL_SIZE;
+        int32_t startingCol = -(GRID_SIZE - colOffset);
+        int32_t endingCol = (GRID_SIZE + colOffset);
+
+        int32_t yRowBegin = startingCol * CELL_SIZE;
+        int32_t yRowEnd = endingCol * CELL_SIZE;
+
+        for (int32_t row = startingRow; row <= endingRow; ++row) 
+        {
+            int32_t x = CELL_SIZE * row;
+            DrawLine(x, yRowBegin, x, yRowEnd, GridColor);
+        }
+
+        int32_t xColBegin = startingRow * CELL_SIZE;
+        int32_t xColEnd = endingRow * CELL_SIZE;
+
+        for (int32_t col = startingCol; col <= endingCol; ++col) 
+        {
+            int32_t y = CELL_SIZE * col;
+            DrawLine(xColBegin, y, xColEnd, y, GridColor);
+        }
+        for (int32_t row = startingRow; row <= endingRow; ++row) 
+        {
+            int32_t x = CELL_SIZE * row;
+            DrawLine(x, yRowBegin, x, yRowEnd, GridColor);
+        }
+    }
+
+    void DrawWall(const Wall& wall, bool noSectorSelected, bool thisSectorSelected) const
+    {
+        Color segmentColor = wall.color;
+        Color tikColor = RED;
+        float thickness = 2.f;
+
+        if(wall.toSector != NULL_SECTOR)
+        {
+            segmentColor = PURPLE;
+        }
+
+        if(!noSectorSelected && !thisSectorSelected)
+        {
+            segmentColor = ColorAlpha(segmentColor, 0.5);
+            tikColor = ColorAlpha(tikColor, 0.5);
+        }
+        else if (thisSectorSelected)
+        {
+            thickness = 4.f;
+        }
+
+        const Segment& segment = wall.segment;
+
+        DrawLineEx(segment.a, segment.b, thickness, segmentColor);
+
+        Vector2 segmentDirection = Vector2Subtract(segment.a, segment.b);
+        Vector2 segmentRightPerpDirection = Vector2Normalize({ -segmentDirection.y, segmentDirection.x });
+
+        Vector2 tikPositionA = { (segment.a.x + segment.b.x) / 2, (segment.a.y + segment.b.y) / 2 };
+        Vector2 tikPositionB = Vector2Add(tikPositionA, Vector2Scale(segmentRightPerpDirection, 10));
+
+        DrawLineEx(tikPositionA, tikPositionB, thickness, tikColor);
+    }
+
+    void DrawUI()
+    {
+        // Top Right Axis
+        {
+            Vector2 axisCenter = {
+                (float)renderTexture.texture.width - 100,
+                50,
+            };
+
+            Vector2 xDirPoint = Vector2Add(axisCenter, Vector2Scale({ 1, 0 }, 70));
+            Vector2 yDirPoint = Vector2Add(axisCenter, Vector2Scale({ 0, 1 }, 70));
+            DrawArrow(axisCenter, xDirPoint, RED, 4, 15, 10);
+            DrawArrow(axisCenter, yDirPoint, GREEN, 4, 15, 10);
+        }
+
+        // TODO : Get mouse position relative to ImguiWindow, and relative to 2D camera space
+
+        {
+            Vector2 posTextCenter = {
+                (float)renderTexture.texture.width - 400,
+                40,
+            };
+
+            Vector2 mousePos = GetMousePosition();
+
+            std::stringstream posStr;
+            posStr << "Cursor pos : [ " << (uint32_t)mousePos.x
+                    << ", " << (uint32_t)mousePos.y << " ]";
+            
+            DrawText(posStr.str().c_str(), posTextCenter.x, posTextCenter.y, 20, BLACK);
+        }
+    }
+
     void RenderViewportGui()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -154,8 +250,6 @@ private:
 
     void RenderSectorsGui()
     {
-        using namespace std::string_literals;
-
         ImGui::Begin("Sectors");
             
             for(auto& [ sectorId, sector ] : world.Sectors)
@@ -171,7 +265,7 @@ private:
                     sectorFlags |= ImGuiTreeNodeFlags_Selected;
                 }
                 
-                std::string label = "Sector - "s + std::to_string(sectorId);
+                std::string label = "Sector - " + std::to_string(sectorId);
                 bool sectorOpen = ImGui::TreeNodeEx(label.c_str(), sectorFlags);
 
                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
@@ -206,4 +300,5 @@ private:
 
     // State
     SectorID currentSelectedSector = NULL_SECTOR;
+    Camera2D camera = { 0 };
 };

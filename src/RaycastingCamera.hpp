@@ -28,12 +28,12 @@ struct RaycastingCamera
         : position(position)
     {}
 
-    Vector2 Forward()
+    Vector2 Forward() const
     {
         return Vector2DirectionFromAngle(yaw);
     }
 
-    Vector2 Right()
+    Vector2 Right() const
     {
         Vector2 forward = Forward();
         return {
