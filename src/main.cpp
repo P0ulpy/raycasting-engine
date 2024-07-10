@@ -82,7 +82,7 @@ int main()
         // Inputs
 
         // Update
-        
+
         {
             std::string windowTitle = "raycasting-engine [";
             windowTitle += std::to_string(1.0f / deltaTime);
@@ -103,7 +103,6 @@ int main()
         if(cameraViewport.IsFocused())
         {
             cam.Update(deltaTime);
-            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
             HideCursor();
         }
         else

@@ -5,6 +5,8 @@
 
 #include "RaycastingCamera.hpp"
 
+#include <iostream>
+
 class RaycastingCameraViewport
 {
 public:
@@ -42,20 +44,25 @@ public:
                 }
             }
 
-            bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
-            if(isFocused && !focused)
-            {
-                SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
-            }
-
-            focused = isFocused;
-
             // draw the view
             rlImGuiImageRenderTextureFit(&renderTexture, true);
 
+            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                ImVec2 viewportRecMin = ImGui::GetItemRectMin();
+                ImVec2 viewportRecMax = ImGui::GetItemRectMax();
+
+                Vector2 mousePos = GetMousePosition();
+                if(mousePos.x >= viewportRecMin.x && mousePos.x <= viewportRecMax.x
+                    && mousePos.y >= viewportRecMin.y && mousePos.y <= viewportRecMax.y
+                )
+                {
+                    focused = true;
+                }
+            }
+
             if(IsFocused() && IsKeyPressed(KEY_ESCAPE))
             {
-                ImGui::SetFocusID(ImGui::GetID("Game Player"), ImGui::GetCurrentWindow());
                 focused = false;
             }
         }
@@ -112,4 +119,7 @@ private:
     bool mouseLocked = false;
     bool focused     = false;
     bool autoResize  = false;
+
+    ImGuiWindow* parentWindow = nullptr; 
+    ImGuiID parentId = 0;
 };
