@@ -31,6 +31,8 @@ jobs:
             c_compiler: gcc
           - os: macos-latest
             c_compiler: cl
+          - os: macos-latest
+            c_compiler: gcc
           - os: ubuntu-latest
             c_compiler: cl
 
@@ -41,7 +43,7 @@ jobs:
 
       - name: Install dependencies on Ubuntu for GLFW3
         if: runner.os == 'ubuntu-latest'
-        run: sudo apt install libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
+        run: sudo apt install libxinerama-dev libxcursor-dev pkg-config xcursor xinerama xorg-dev xorg libglu1-mesa-dev libglu1-mesa
 
       - name: Install dependencies on Ubuntu for Raylib
         if: runner.os == 'ubuntu-latest'
@@ -49,7 +51,7 @@ jobs:
     
       - name: Install dependencies on macOS for GLFW3
         if: runner.os == 'macos-latest'
-        run: brew install install libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config
+        run: brew install install libxinerama-dev libxcursor-dev pkg-config xcursor xinerama xorg-dev xorg libglu1-mesa-dev libglu1-mesa
 
       - name: Install dependencies on macOS for Raylib
         if: runner.os == 'macos-latest'

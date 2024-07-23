@@ -294,7 +294,7 @@ private:
             
             if(toSector != NULL_SECTOR)
             {
-                ImGui::Text("[%zu] => %zu", i, toSector);
+                ImGui::Text("[%zu] => %u", i, toSector);
             }
             else
             {
