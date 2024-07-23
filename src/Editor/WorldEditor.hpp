@@ -290,7 +290,16 @@ private:
 
         for(size_t i = 0; i < sector.walls.size(); ++i)
         {
-            ImGui::Text("[%d] => %d", i, sector.walls[i].toSector);
+            SectorID toSector = sector.walls[i].toSector;
+            
+            if(toSector != NULL_SECTOR)
+            {
+                ImGui::Text("[%zu] => %zu", i, toSector);
+            }
+            else
+            {
+                ImGui::Text("[%zu] => NULL", i);
+            }
         }
     }
 
