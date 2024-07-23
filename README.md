@@ -1,5 +1,7 @@
-[![CMake Build Debug](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-debug.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-debug.yml)
-[![CMake Build Release](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-release.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-release.yml)
+[![Build Windows](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-windows.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-windows.yml)
+[![Build MacOS](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-macos.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-macos.yml)
+[![Build Ubuntu](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-ubuntu.yml/badge.svg)](https://github.com/P0ulpy/raycasting-engine/actions/workflows/cmake-build-ubuntu.yml)
+
 # Raycasting Engine - A Modern C++ Implementation of a DOOM Style Renderer
 
 Welcome to the Raycasting Engine project, an implementation of a DOOM Style renderer using modern C++ and technologies like raylib and imgui.
