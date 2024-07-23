@@ -16,6 +16,13 @@ jobs:
         os: [macos-latest]
         build_type: [Debug, Release]
         c_compiler: [clang, gcc]
+        include:
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: gcc
+            cpp_compiler: g++
 
     steps:
       - uses: actions/checkout@v4
