@@ -9,7 +9,7 @@ Welcome to the Raycasting Engine project, an implementation of a DOOM Style rend
 This project is developed in a **recreational programming** context, it does not aim to be *production ready* at some point. It serves as a learning experience to explore new concepts and technologies while creating a project around them.
 
 ## Goals
-The primary goal of this project is to implement a DOOM Style Renderer with a simple Engine around it and a Graphical Editor for prototyping Maps, rendering, gameplay etc... I'm using modern C++ and technologies like raylib and imgui it achieve this goal. At the end the engine should be able to build and ship a standalone executable without prototyping tools.
+The primary goal of this project is to implement a DOOM Style Renderer with a simple Engine around it and a Graphical Editor for prototyping Maps, rendering, gameplay etc... I'm using modern C++ and technologies like raylib and imgui it achieve this goal. At the end the engine should be able to build and ship a standalone executable without the editor.
 
 ## Showcase
 
@@ -70,12 +70,12 @@ This repo toolchain as been created using my [cmake and vcpkg template](https://
 
 ### Bootstrap workspace
 
-`Windows :`
+**Windows :**
 
 Make sure you installed [Visual Studio](https://visualstudio.microsoft.com/) with [C and C++ support](https://learn.microsoft.com/cpp/build/vscpp-step-0-installation?view=msvc-170#step-4---choose-workloads) and [C++ linux development with cmake](https://learn.microsoft.com/cpp/linux/download-install-and-setup-the-linux-development-workload?view=msvc-170#visual-studio-setup).
 Make sure you installed [CMake](https://cmake.org/download) as well.
 
-`GNU/Linux (apt) :`
+**GNU/Linux (apt) :**
 
 Install necessary build tools and a C/C++ compiler
 ```sh
@@ -91,7 +91,7 @@ Then run the bootstrap script
 .\scripts\bootstrap-workspace.bat
 ```
 
-*Generate the project :*
+**Generate the cmake project :**
 
 ```sh
 # For debug build
@@ -107,7 +107,7 @@ Then run the bootstrap script
 .\scripts\generate-cmake-release.bat
 ```
 
-*Compile the project :*
+**Compile :**
 
 ```bash
 # For debug build
@@ -124,6 +124,7 @@ Then run the bootstrap script
 ```
 
 **Run the program**
+
 You can now run the compiled program by looking into `out/Debug` or `out/Release`.
 The out directory hierarchy will be different depending on your generator.
 
