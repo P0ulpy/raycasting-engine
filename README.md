@@ -44,7 +44,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
 *Editor*
 - [x] 3D View
 - [x] Simple inspector for Global world objects (Physics, Camera, etc...)
-- [ ] Rendering Debugger including :
+- [ ] [IN_PROGRESS] Rendering Debugger including :
   - [ ] Step by step rendering
   - [ ] Rendering steps visalizer
  - [ ] Map Editor including :
