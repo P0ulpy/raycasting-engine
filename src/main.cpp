@@ -69,7 +69,7 @@ int main()
 
     RaycastingCameraViewport cameraViewport(cam, 1920, 1080);
     MiniMapViewport miniMapViewport(DefaultScreenWidth / 4, DefaultScreenWidth / 4); 
-    WorldEditor worldEditor(world);
+    WorldEditor worldEditor(world, cam.position);
 
     RenderingOrchestrator renderingOrchestrator(cameraViewport);
     
@@ -128,25 +128,13 @@ int main()
 
                 ImGui::DockSpaceOverViewport();
                 ApplicationMainMenuBar();
-                
-                {
-                    ImGui::Begin("Game Player");
-                        ImGuiID gamePlayerDockerSpace = ImGui::GetID("gamePlayerDockerSpace");
-                        ImGui::DockSpace(gamePlayerDockerSpace);
-                    ImGui::End();
 
-                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
-                    cam.DrawGUI();
-                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
-                    cameraViewport.DrawGUI();
-                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
-                    miniMapViewport.DrawGUI();
-                    ImGui::SetNextWindowDockID(gamePlayerDockerSpace, ImGuiCond_FirstUseEver);
-                    renderingOrchestrator.DrawGUI();
-                }
-                {
-                    worldEditor.DrawGUI();
-                }
+                cam.DrawGUI();
+                cameraViewport.DrawGUI();
+                miniMapViewport.DrawGUI();
+                renderingOrchestrator.DrawGUI();
+
+                worldEditor.DrawGUI();
 
             rlImGuiEnd();
 

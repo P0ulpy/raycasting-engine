@@ -31,6 +31,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
   - [x] Neighbouring sectors sides
   - [ ] Textures for Wall & Borders
 - [x] Pitch and Yaw for camera movement
+- [ ] Ceiling and floor casting
 - [ ] Vignette for sprites rendered over walls
 - [ ] Entities sprites within the 3D space
 - [ ] Basic Physics including : 
@@ -63,6 +64,9 @@ For now the project in a prototyping phase, still mainly focused in making an ef
 - [ ] Project shiping including :
   - [ ] Release Build
   - [ ] Assets bundle
+
+*Debug / Enhancement*
+- [ ] Fix Sector elevation computation
 
 ## Building the project from sources
 

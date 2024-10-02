@@ -14,11 +14,11 @@
 class WorldEditor
 {
 public:
-    WorldEditor(World& world)
+    WorldEditor(World& world, Vector2 target = { 0.f, 0.f })
         : world(world)
         , renderTexture(LoadRenderTexture(1920, 1080))
         , camera({ 
-            .target = { 0 },
+            .target = target,
             .rotation = 0.f,
             .zoom = 1.f,
         })
@@ -39,15 +39,7 @@ public:
 
     void DrawGUI()
     {
-        ImGui::Begin("World Editor");
-            ImGuiID worldEditorDockerSpace = ImGui::GetID("worldEditorDockerSpace");
-            ImGui::DockSpace(worldEditorDockerSpace);
-        ImGui::End();
-
-        ImGui::SetNextWindowDockID(worldEditorDockerSpace, ImGuiCond_FirstUseEver);
         RenderSectorsGui();
-
-        ImGui::SetNextWindowDockID(worldEditorDockerSpace, ImGuiCond_FirstUseEver);
         RenderViewportGui();
     }
 
