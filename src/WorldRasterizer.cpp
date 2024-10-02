@@ -16,7 +16,7 @@ RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint
         .RenderTargetWidth = RenderTargetWidth,
         .RenderTargetHeight = RenderTargetHeight,
         .FloorVerticalOffset = ComputeVerticalOffset(cam, RenderTargetHeight),
-        .CamCurrentSectorElevationOffset = 0,//ComputeElevationOffset(cam, world, RenderTargetHeight),
+        .CamCurrentSectorElevationOffset = 0, // TODO : ComputeElevationOffset(cam, world, RenderTargetHeight),
     };
 
     context.yBoundaries.resize(RenderTargetWidth);
@@ -110,11 +110,11 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
         {
             // Floor / ceiling rendering
             {
-                // Draw floor
-                float centerY = ((RenderTargetHeight / 2) - FloorVerticalOffset) + CamCurrentSectorElevationOffset;
-                DrawLine(x, yMinMax.min, x, centerY, currentSector.ceilingColor);
-                // Draw Ceiling
-                DrawLine(x, centerY, x, yMinMax.max, currentSector.floorColor);
+                // // Draw floor
+                // float centerY = ((RenderTargetHeight / 2) - FloorVerticalOffset) + CamCurrentSectorElevationOffset;
+                // DrawLine(x, yMinMax.min, x, centerY, currentSector.ceilingColor);
+                // // Draw Ceiling
+                // DrawLine(x, centerY, x, yMinMax.max, currentSector.floorColor);
             }
 
             // Means this is a slid wall
@@ -156,7 +156,7 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
                 }
                 else
                 {
-                    renderAreaToPushInStack[nextSectorId].renderArea.xEnd = x;
+                    renderAreaToPushInStack.at(nextSectorId).renderArea.xEnd = x;
                 }
             
                 // Draw a Purple placeholder where next sector will be drawn
@@ -176,6 +176,12 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
 
 void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance)
 {
+    // TODO : 
+    // zCeilling shloud not be < to current zFloor
+    // And this is the same in the other way
+    // zFloor should not be > to current zCeiling
+ 
+    // Top Border
     {
         bool nextSectCelingHigher = nextSector.zCeiling >= currentSector.zCeiling;
 
@@ -190,14 +196,15 @@ void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMa
 
         if(!nextSectCelingHigher)
         {
-            bool topBorder = !nextSectCelingHigher;
-            RenderCameraYLine(topBorderLineData, nextSector.topBorderColor, topBorder, true);
+            bool topEdge = !nextSectCelingHigher;
+            RenderCameraYLine(topBorderLineData, nextSector.topBorderColor, topEdge, true);
         }
 
         // Apply Y min
         yMinMax.min = topBorderLineData.bottom.y;
     }
 
+    // Bottom Border
     {
         bool nextSectFloorHigher = nextSector.zFloor >= currentSector.zFloor;
 
@@ -212,8 +219,8 @@ void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMa
 
         if(!nextSectFloorHigher)
         {
-            bool bottomBorder = !nextSectFloorHigher;
-            RenderCameraYLine(bottomBorderLineData, nextSector.bottomBorderColor, true, bottomBorder);
+            bool bottomEdge = !nextSectFloorHigher;
+            RenderCameraYLine(bottomBorderLineData, nextSector.bottomBorderColor, true, bottomEdge);
         }
 
         // Apply Y max
@@ -228,7 +235,7 @@ float ComputeVerticalOffset(const RaycastingCamera& cam, uint32_t RenderTargetHe
 
 float ComputeElevationOffset(const RaycastingCamera& cam, const World& world, uint32_t RenderTargetHeight)
 { 
-    // const float OneSectorHeight = RenderTargetHeight * cam.nearPlaneDistance;
+    // TODO : const float OneSectorHeight = RenderTargetHeight * cam.nearPlaneDistance;
     
     const Sector& currentSector = world.Sectors.at(cam.currentSectorId);
     return Lerp((float)RenderTargetHeight, 0.f, currentSector.zFloor);
@@ -270,7 +277,7 @@ CameraYLineData ComputeCameraYAxis(
     };
 }
 
-void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder, bool bottomBorder)
+void RenderCameraYLine(CameraYLineData renderData, Color color, bool topEdge, bool bottomEdge)
 {
     float darkness = Lerp(1, 0, renderData.normalizedDepth);
 
@@ -281,8 +288,8 @@ void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder, 
         // color
     );
 
-    if(topBorder)
+    if(topEdge)
         DrawRectangle(renderData.top.x - 1, renderData.top.y - 1, 3, 3, GRAY);
-    if(bottomBorder)
+    if(bottomEdge)
         DrawRectangle(renderData.bottom.x - 1, renderData.bottom.y - 1, 3, 3, GRAY);
 }
