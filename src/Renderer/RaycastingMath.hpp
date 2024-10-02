@@ -9,7 +9,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "ColorHelper.hpp"
+#include "Utils/ColorHelper.hpp"
 
 inline Vector2 Vector2DirectionFromAngle(float angleRadian, float length = 1)
 {

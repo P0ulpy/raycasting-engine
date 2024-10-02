@@ -1,12 +1,11 @@
-#include "WorldRasterizer.hpp"
-
-#include "RaycastingMath.hpp"
-#include "ColorHelper.hpp"
-
 #include <limits>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+
+#include "Renderer/WorldRasterizer.hpp"
+#include "Renderer/RaycastingMath.hpp"
+#include "Utils/ColorHelper.hpp"
 
 RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam)
 {

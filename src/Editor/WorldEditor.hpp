@@ -4,12 +4,11 @@
 #include <imgui_internal.h>
 #include <rlImGui.h>
 #include <raylib.h>
-
 #include <sstream>
 
-#include "../World.hpp"
-#include "../RaycastingCamera.hpp"
-#include "../DrawingHelper.hpp"
+#include "Renderer/World.hpp"
+#include "Renderer/RaycastingCamera.hpp"
+#include "Utils/DrawingHelper.hpp"
 
 class WorldEditor
 {

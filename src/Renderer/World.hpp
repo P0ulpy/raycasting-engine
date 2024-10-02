@@ -1,8 +1,8 @@
 #pragma once
 
-#include "RaycastingMath.hpp"
-
 #include <unordered_map>
+
+#include "RaycastingMath.hpp"
 
 struct World
 {

@@ -2,13 +2,12 @@
 
 #include <imgui.h>
 #include <rlImGui.h>
-
 #include <raymath.h>
 #include <raylib.h>
 
-#include "World.hpp"
-#include "RaycastingCamera.hpp"
-#include "DrawingHelper.hpp"
+#include "Renderer/World.hpp"
+#include "Renderer/RaycastingCamera.hpp"
+#include "Utils/DrawingHelper.hpp"
 
 class MiniMapViewport
 {

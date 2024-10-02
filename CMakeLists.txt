@@ -24,13 +24,22 @@ set_target_properties(${APP_TARGET_NAME}
     PROPERTIES LINKER_LANGUAGE CXX
 )
 
-add_subdirectory(src/vendors)
+add_subdirectory(vendors)
 
 target_include_directories(${APP_TARGET_NAME}
     PRIVATE ${RAYGUI_INCLUDE_DIRS}
+    PRIVATE ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(${APP_TARGET_NAME}
     PRIVATE raylib
     PRIVATE imgui::imgui
+)
+
+set(RESSOURCES_FOLDER ressources)
+
+add_custom_command(
+    TARGET ${APP_TARGET_NAME}
+    COMMENT "Copy ressources directory"
+    PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/${RESSOURCES_FOLDER} $<TARGET_FILE_DIR:${APP_TARGET_NAME}>
 )

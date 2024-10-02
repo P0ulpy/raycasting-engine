@@ -1,10 +1,9 @@
 #pragma once
 
 #include <raylib.h>
-
 #include <vector>
 
-#include "RaycastingMath.hpp"
+#include "Renderer/RaycastingMath.hpp"
 
 inline void DrawArrow(Vector2 start, Vector2 end, Color color = RED, float thickness = -1.f, float arrowTipLength = 3, float arrowTipWidth = 2)
 {

@@ -2,10 +2,9 @@
 
 #include <raylib.h>
 #include <raymath.h>
-
 #include <imgui.h>
 
-#include "RaycastingMath.hpp"
+#include "Renderer/RaycastingMath.hpp"
 
 struct RaycastingCamera
 {

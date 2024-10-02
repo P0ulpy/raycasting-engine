@@ -7,7 +7,6 @@
 build/
 vcpkg_installed/
 cmake-build-debug-visual-studio/
-imgui.ini
 
 # User-specific files
 *.rsuser

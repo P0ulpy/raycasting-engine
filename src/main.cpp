@@ -7,17 +7,19 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include "ImGuiStyle.hpp"
 
-#include "World.hpp"
-#include "RaycastingMath.hpp"
-#include "RaycastingCamera.hpp"
-#include "ColorHelper.hpp"
-#include "WorldRasterizer.hpp"
-#include "RaycastingCameraViewport.hpp"
-#include "MiniMapViewport.hpp"
-#include "RenderingOrchestrator.hpp"
+#include "Renderer/World.hpp"
+#include "Renderer/RaycastingMath.hpp"
+#include "Renderer/RaycastingCamera.hpp"
+#include "Renderer/WorldRasterizer.hpp"
+
+#include "Editor/ImGuiStyle.hpp"
+#include "Editor/RaycastingCameraViewport.hpp"
+#include "Editor/MiniMapViewport.hpp"
+#include "Editor/RenderingOrchestrator.hpp"
 #include "Editor/WorldEditor.hpp"
+
+#include "Utils/ColorHelper.hpp"
 
 constexpr int DefaultScreenWidth = 1720;
 constexpr int DefaultScreenHeight = 880;

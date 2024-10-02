@@ -1,12 +1,11 @@
 #pragma once
 
 #include <raylib.h>
-
 #include <stack>
 #include <functional>
 
-#include "RaycastingCamera.hpp"
-#include "World.hpp"
+#include "Renderer/RaycastingCamera.hpp"
+#include "Renderer/World.hpp"
 
 struct RenderAreaYMinMax
 {

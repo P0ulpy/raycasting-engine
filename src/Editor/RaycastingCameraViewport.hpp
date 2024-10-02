@@ -2,10 +2,9 @@
 
 #include <imgui.h>
 #include <rlImGui.h>
-
-#include "RaycastingCamera.hpp"
-
 #include <iostream>
+
+#include "Renderer/RaycastingCamera.hpp"
 
 class RaycastingCameraViewport
 {
