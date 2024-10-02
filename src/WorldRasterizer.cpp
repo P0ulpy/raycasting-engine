@@ -285,7 +285,6 @@ void RenderCameraYLine(CameraYLineData renderData, Color color, bool topEdge, bo
         renderData.top, 
         renderData.bottom, 
         ColorDarken(color, renderData.normalizedDepth)
-        // color
     );
 
     if(topEdge)

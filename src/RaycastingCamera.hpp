@@ -9,20 +9,28 @@
 
 struct RaycastingCamera
 {
+    // World relative 
+    SectorID currentSectorId = 1;
+
+    // Transform
     Vector2 position { 0 };
     float elevation  { 0 };
     float yaw        { 0 };
     float pitch      { 0 };
 
+    // Camera options
     float fov         { 60 };
     float fovVectical { 120 };
-
     float farPlaneDistance  = 900.0f;
     float nearPlaneDistance = 100.f;
-
+    
+    // Rendrer options
     size_t maxRenderItr { 25 };
 
-    uint32_t currentSectorId = 1;
+    // Player controller options
+    float moveSpeed = 100.f;
+    float zAxisMoveSpeed = 500.f;
+    float mouseSensitivity = 0.2f;
 
     RaycastingCamera(Vector2 position = { 0 })
         : position(position)
@@ -61,12 +69,14 @@ struct RaycastingCamera
             
             ImGui::SliderFloat("FOV", &fov, 20, 180);
             ImGui::SliderFloat("FOV Vetical", &fovVectical, 20, 180);
-            
             ImGui::SliderFloat("Far plane Distance", &farPlaneDistance, 1, 5000);
             ImGui::SliderFloat("Near plane Distance", &nearPlaneDistance, 1, 500);
 
-            ImGui::InputInt("Max render itr", (int*)&maxRenderItr);
+            ImGui::SliderFloat("Move Speed", &moveSpeed, 0, 1000);
+            ImGui::SliderFloat("Z axix Move Speed", &zAxisMoveSpeed, 0, 5000);
+            ImGui::SliderFloat("Mouse Sensitivity", &mouseSensitivity, 0, 2);
 
+            ImGui::InputInt("Max render itr", (int*)&maxRenderItr);
             ImGui::InputInt("Current Sector", (int*)&currentSectorId);
 
         ImGui::End();
@@ -95,8 +105,6 @@ struct RaycastingCamera
             moveDirection = Vector2Add(moveDirection, backward);
         }
 
-        float moveSpeed = 100.f;
-
         moveDirection = Vector2Normalize(moveDirection);
         moveDirection = Vector2Scale(moveDirection, moveSpeed);
         moveDirection = Vector2Scale(moveDirection, deltaTime);
@@ -105,36 +113,28 @@ struct RaycastingCamera
 
         // Up / Down
 
-        constexpr float UpDownSpeed = 500.f;
-
         if(IsKeyDown(KEY_SPACE))
         {
-            elevation += UpDownSpeed * deltaTime;
+            elevation += zAxisMoveSpeed * deltaTime;
         }
         if(IsKeyDown(KEY_LEFT_SHIFT))
         {
-            elevation -= UpDownSpeed * deltaTime;
+            elevation -= zAxisMoveSpeed * deltaTime;
         }
 
-        // Get the mouse delta (how much the mouse moved since the last frame)
+        // Yaw / Pitch
         Vector2 mouseDelta = GetMouseDelta();
 
-        // Scale the mouse movement by a sensitivity factor to control the speed of the rotation
-        constexpr float sensitivity = 0.003f;
-        float yawChange = mouseDelta.x * sensitivity;
-        float pitchChange = mouseDelta.y * sensitivity;
-
-        // Update the camera's yaw
-        yaw += yawChange;
-        pitch += pitchChange;
+        yaw +=  (mouseDelta.x * mouseSensitivity) * deltaTime;
+        pitch += (mouseDelta.y * mouseSensitivity) * deltaTime;
 
         // Clamp yaw in between 0 and 2 * PI
-        if(yaw > 2 * PI) yaw -= 2 * PI; 
+        if(yaw > 2 * PI) yaw -= 2 * PI;
         if(yaw < 0)      yaw += 2 * PI;
 
-        // Clamp pitch between -(PI / 2) and PI / 2
-        if(pitch > PI / 2)  pitch = PI / 2;
-        if(pitch < -PI / 2) pitch = -PI / 2;
+        // Clamp pitch between -(PI / 6) and PI / 6 (to limit the distortion effect)
+        if(pitch > PI / 6)  pitch = PI / 6;
+        if(pitch < -PI / 6) pitch = -PI / 6;
 
         SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
     }

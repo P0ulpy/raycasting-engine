@@ -225,7 +225,7 @@ private:
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::SetNextWindowSizeConstraints(ImVec2(renderTexture.texture.width, renderTexture.texture.height), ImVec2((float)GetScreenWidth(), (float)GetScreenHeight()));
 
-        if (ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar))
+        if (ImGui::Begin("World Editor", nullptr, ImGuiWindowFlags_NoScrollbar))
         {
             ImVec2 windowSize = ImGui::GetWindowSize();
             if(windowSize.x != renderTexture.texture.width || windowSize.y != renderTexture.texture.height)
