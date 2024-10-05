@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "RaycastingCameraViewport.hpp"
+#include "Utils/DrawingHelper.hpp"
 
 class RenderingOrchestrator
 {
@@ -18,23 +19,17 @@ public:
 
         if(play)
         {
-            InitilizeFrame(world, cam);
-
-            if(rasterizer.IsRenderIterationRemains())
-            {
-                OneRenderItr(true);
-            }
-
-            while(rasterizer.IsRenderIterationRemains())
-            {
-                OneRenderItr(false);
-            }
+            AllRenderItr(world, cam);
         }
-        else if(stepByStepNewFrame)
+        else
         {
-            stepByStepNewFrame = false;
-            InitilizeFrame(world, cam);
-            OneRenderItr(true);
+            switch(invokeEvent)
+            {
+                case StepInto: OneRenderItr(world, cam); break;
+                case StepOver: AllRenderItr(world, cam); break;
+            }
+
+            invokeEvent = None;
         }
     }
 
@@ -64,67 +59,75 @@ public:
         }
     }
 
-    void OneRenderItr(bool firstItr)
+    void AllRenderItr(World &world, RaycastingCamera &cam)
     {
-        if(rasterizer.IsRenderIterationRemains())
+        do
         {
-           auto& renderTexture = cameraViewport.GetRenderTexture();
-     
-            BeginTextureMode(renderTexture);
+            OneRenderItr(world, cam);
+        } while(rasterizer.IsRenderIterationRemains());
+    }
 
-                if(firstItr)
-                {
-                    ClearBackground(MY_BLACK);
-                }
+    void OneRenderItr(World &world, RaycastingCamera &cam)
+    {
+        if(!rasterizer.IsRenderIterationRemains())
+        {
+            InitilizeFrame(world, cam);
+        }
 
-                rasterizer.RenderIteration();
-            EndTextureMode();
+        assert(rasterizer.IsRenderIterationRemains());
 
-            auto& ctx = rasterizer.GetContext();
-            assert(rasterizingItrsTextures.size() >= ctx.currentRenderItr);
+        auto& renderTexture = cameraViewport.GetRenderTexture();
+        auto& ctx = rasterizer.GetContext();
+    
+        BeginTextureMode(renderTexture);
 
-            auto& texture = rasterizingItrsTextures.at(ctx.currentRenderItr - 1);
-
-            if(texture.id == 0)
+            if(ctx.currentRenderItr == 0)
             {
-                texture = LoadRenderTexture(renderTexture.texture.width, renderTexture.texture.height);
+                ClearBackground(MY_BLACK);
             }
 
-            BeginTextureMode(texture);
-                DrawTexture(renderTexture.texture, 0, 0, WHITE);
-            EndTextureMode();
-        }
-        else
+            rasterizer.RenderIteration();
+            
+        EndTextureMode();
+
+        assert(rasterizingItrsTextures.size() >= ctx.currentRenderItr);
+        assert(ctx.currentRenderItr > 0);
+
+        auto& texture = rasterizingItrsTextures.at(ctx.currentRenderItr - 1);
+
+        if(texture.id == 0)
         {
-            stepByStepNewFrame = true;
+            texture = LoadRenderTexture(renderTexture.texture.width, renderTexture.texture.height);
         }
+
+        BeginTextureMode(texture);
+            DrawTextureFlippedY(renderTexture.texture, 0, 0, WHITE);
+        EndTextureMode();
     }
 
     void DrawGUI()
     {
         ImGui::Begin("Rendering");
 
-            if(ImGui::Button("Play"))
+            constexpr const char* LabelPlay = "Play";
+            constexpr const char* LabelPause = "Pause";
+
+            if(ImGui::Button(!play ? LabelPlay : LabelPause))
             {
-                play = true;
+                play = !play;
             } 
-            ImGui::SameLine();
-            if(ImGui::Button("Pause"))
-            {
-                play = false;
-                stepByStepNewFrame = true;
-            }
             ImGui::SameLine();
             if(ImGui::Button("> Step") && !play)
             {
-                OneRenderItr(stepByStepNewFrame);
+                invokeEvent = StepInto;
             }
             ImGui::SameLine();
             if(ImGui::Button(">> Step") && !play)
             {
-
+                invokeEvent = StepOver;
             }
 
+            // Render Iterations UI
             {
                 auto& ctx = rasterizer.GetContext();
             
@@ -145,13 +148,11 @@ public:
 
 private:    
     RaycastingCameraViewport& cameraViewport;
-
-    // Step By step
-    bool play = true;
-    bool stepByStepNewFrame = false;
-
     WorldRasterizer rasterizer;
 
+    bool play = true;
+    enum InvokeEvent { None, StepInto, StepOver };
+    InvokeEvent invokeEvent { None };
     std::vector<RenderTexture> rasterizingItrsTextures;
 };
 

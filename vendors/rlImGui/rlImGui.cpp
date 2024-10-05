@@ -616,7 +616,7 @@ void rlImGuiImageRenderTextureFit(const RenderTexture* image, bool center)
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (area.y / 2 - sizeY / 2));
     }
 
-    rlImGuiImageRect(&image->texture, sizeX, sizeY, Rectangle{ 0,0, float(image->texture.width), -float(image->texture.height) });
+    rlImGuiImageRect(&image->texture, sizeX, sizeY, Rectangle{ 0, 0, float(image->texture.width), -float(image->texture.height) });
 }
 
 void rlImGuiImageRenderTextureFitWidth(const RenderTexture* image)
@@ -629,7 +629,7 @@ void rlImGuiImageRenderTextureFitWidth(const RenderTexture* image)
 
     ImVec2 area = ImGui::GetContentRegionAvail();
 
-    float scale =  area.x / image->texture.width;
+    float scale = area.x / image->texture.width;
 
     int sizeX = int(image->texture.width * scale);
     int sizeY = int(image->texture.height * scale);
