@@ -70,11 +70,10 @@ int main()
     };
 
     RaycastingCameraViewport cameraViewport(cam, 1920, 1080);
-    MiniMapViewport miniMapViewport(DefaultScreenWidth / 4, DefaultScreenWidth / 4); 
     WorldEditor worldEditor(world, cam.position);
 
     RenderingOrchestrator renderingOrchestrator(cameraViewport);
-    
+
     while (!WindowShouldClose())
     {
         float currentTime = GetTime();
@@ -84,7 +83,7 @@ int main()
         // Inputs
 
         // Update
-
+        
         {
             std::string windowTitle = "raycasting-engine [";
             windowTitle += std::to_string(1.0f / deltaTime);
@@ -118,7 +117,6 @@ int main()
 
         BeginDrawing();
             
-            miniMapViewport.Render(world, cam);
             worldEditor.Render(cam);
             renderingOrchestrator.Render(world, cam);
 
@@ -133,7 +131,6 @@ int main()
 
                 cam.DrawGUI();
                 cameraViewport.DrawGUI();
-                miniMapViewport.DrawGUI();
                 renderingOrchestrator.DrawGUI();
 
                 worldEditor.DrawGUI();

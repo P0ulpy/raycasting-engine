@@ -6,82 +6,33 @@
 #include "Renderer/WorldRasterizer.hpp"
 #include "Renderer/RaycastingMath.hpp"
 #include "Utils/ColorHelper.hpp"
+#include "WorldRasterizer.hpp"
 
-RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam)
-{
-    RasterizeWorldContext context = {
-        .world = world,
-        .cam = cam,
-        .RenderTargetWidth = RenderTargetWidth,
-        .RenderTargetHeight = RenderTargetHeight,
-        .FloorVerticalOffset = ComputeVerticalOffset(cam, RenderTargetHeight),
-        .CamCurrentSectorElevationOffset = 0, // TODO : ComputeElevationOffset(cam, world, RenderTargetHeight),
-    };
-
-    context.yBoundaries.resize(RenderTargetWidth);
-    
-    for (auto& bound : context.yBoundaries) 
-    {
-        bound.max = RenderTargetHeight;
-        bound.min  = 0;
-    }
-    
-    // assert(world.Sectors.contains(cam.currentSector), "Try to InitRasterizeWorldContext with an invalid SectorID");
-
-    context.renderStack.push({
-        .sectorId = cam.currentSectorId,
-        .renderArea = {
-            .xBegin = 0,
-            .xEnd = RenderTargetWidth - 1,
-        }
-    });
-
-    return context;
-}
-
-void RasterizeWorldInTexture(const RenderTexture& renderTexture, const World &world, const RaycastingCamera &cam)
-{
-    BeginTextureMode(renderTexture);
-        RasterizeWorld(renderTexture.texture.width, renderTexture.texture.height, world, cam);
-    EndTextureMode();
-}
-
-void RasterizeWorld(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam)
-{
-    RasterizeWorldContext rasterizeContext = InitRasterizeWorldContext(RenderTargetWidth, RenderTargetHeight, world, cam);
-
-    ClearBackground(MY_BLACK);
-
-    for(size_t i = 0;
-        0 < rasterizeContext.renderStack.size() && i < cam.maxRenderItr;
-        ++i
-    )
-    {
-        RasterizeInRenderArea(rasterizeContext, rasterizeContext.renderStack.top(), RenderNextAreaBorders);
-    }
-}
-
-void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext, RenderNextAreaBordersCallback renderNextAreaBordersCallback)
+void RasterizeInRenderArea(RasterizeWorldContext& ctx, SectorRenderContext renderContext)
 {
     std::unordered_map<SectorID, SectorRenderContext> renderAreaToPushInStack;
 
-    auto& [ world, cam, RenderTargetWidth, RenderTargetHeight, FloorVerticalOffset, CamCurrentSectorElevationOffset, yBoundaries, renderStack ] = worldContext;
     const auto& [ sectorId, renderArea ] = renderContext;
     
-    const Sector& currentSector = world.Sectors.at(sectorId);
+    const Sector& currentSector = ctx.world->Sectors.at(sectorId);
 
     for(uint32_t x = renderArea.xBegin; x <= renderArea.xEnd; ++x)
     {
-        RenderAreaYMinMax& yMinMax = yBoundaries.at(x);
+        MinMaxUint32& yMinMax = ctx.yBoundaries.at(x);
 
-        float rayAngle = RayAngleforScreenXCam(x, cam, RenderTargetWidth);
+        float rayAngle = RayAngleforScreenXCam(x, *ctx.cam, ctx.RenderTargetWidth);
 
         RasterRay rasterRay = {
-            .position = cam.position,
-            .direction = Vector2DirectionFromAngle((rayAngle * DEG2RAD) + cam.yaw),
+            .position = ctx.cam->position,
+            .direction = Vector2DirectionFromAngle((rayAngle * DEG2RAD) + ctx.cam->yaw),
         };
 
-        RaycastHitData bestHitData;
+        struct RaycastHitData
+        {
+            float distance = std::numeric_limits<float>::max();
+            Vector2 position;
+            const Wall* wall = nullptr;
+        } bestHitData;
 
         for(const Wall& wall : currentSector.walls)
         {
@@ -89,7 +40,7 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
             if(RayToSegmentCollision(rasterRay, wall.segment, hitInfo))
             {
                 if(wall.toSector != NULL_SECTOR 
-                    && PointSegmentSide(cam.position, wall.segment.a, wall.segment.b) <= 0)
+                    && PointSegmentSide(ctx.cam->position, wall.segment.a, wall.segment.b) <= 0)
                 {
                     continue;
                 }
@@ -120,9 +71,9 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
             if(bestHitData.wall->toSector == NULL_SECTOR)
             {
                 CameraYLineData cameraWallYData = 
-                    ComputeCameraYAxis(cam, x, bestHitData.distance, 
-                        FloorVerticalOffset, CamCurrentSectorElevationOffset,
-                        RenderTargetWidth, RenderTargetHeight,
+                    ComputeCameraYAxis(*ctx.cam, x, bestHitData.distance, 
+                        ctx.FloorVerticalOffset, ctx.CamCurrentSectorElevationOffset,
+                        ctx.RenderTargetWidth, ctx.RenderTargetHeight,
                         yMinMax.max,
                         yMinMax.min,
                         currentSector.zFloor, currentSector.zCeiling
@@ -132,12 +83,13 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
             }
             else
             {
-                // assert(world.Sectors.contains(bestHitData.wall->toSector), "Try to render a next sector with an invalid SectorID");
+                // "Try to render a next sector with an invalid SectorID"
+                assert(ctx.world->Sectors.contains(bestHitData.wall->toSector));
 
                 const SectorID nextSectorId = bestHitData.wall->toSector;
-                const Sector& nextSector = world.Sectors.at(nextSectorId);
+                const Sector& nextSector = ctx.world->Sectors.at(nextSectorId);
                 
-                renderNextAreaBordersCallback(worldContext, yMinMax, currentSector, nextSector, x, bestHitData.distance);
+                RenderNextAreaBorders(ctx, yMinMax, currentSector, nextSector, x, bestHitData.distance);
 
                 // Create / update NextRenderArea
 
@@ -165,15 +117,15 @@ void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderCont
     }
 
     // current render is over pop it
-    renderStack.pop();
+    ctx.renderStack.pop();
 
     for(const auto& [ key, renderAreaCtx ] : renderAreaToPushInStack)
     {
-        renderStack.push(renderAreaCtx);
+        ctx.renderStack.push(renderAreaCtx);
     }
 }
 
-void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance)
+void RenderNextAreaBorders(RasterizeWorldContext& worldContext, MinMaxUint32& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance)
 {
     // TODO : 
     // zCeilling shloud not be < to current zFloor
@@ -186,7 +138,7 @@ void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMa
 
         const Sector& zSizesSector = (nextSectCelingHigher) ? currentSector : nextSector;
 
-        CameraYLineData topBorderLineData = ComputeCameraYAxis(worldContext.cam, x, hitDistance, 
+        CameraYLineData topBorderLineData = ComputeCameraYAxis(*worldContext.cam, x, hitDistance, 
             worldContext.FloorVerticalOffset, worldContext.CamCurrentSectorElevationOffset,
             worldContext.RenderTargetWidth, worldContext.RenderTargetHeight,
             yMinMax.max, yMinMax.min,
@@ -209,7 +161,7 @@ void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMa
 
         const Sector& zSizesSector = (nextSectFloorHigher) ? currentSector : nextSector;
 
-        CameraYLineData bottomBorderLineData = ComputeCameraYAxis(worldContext.cam, x, hitDistance, 
+        CameraYLineData bottomBorderLineData = ComputeCameraYAxis(*worldContext.cam, x, hitDistance, 
             worldContext.FloorVerticalOffset, worldContext.CamCurrentSectorElevationOffset,
             worldContext.RenderTargetWidth, worldContext.RenderTargetHeight,
             yMinMax.max, yMinMax.min,
@@ -290,4 +242,79 @@ void RenderCameraYLine(CameraYLineData renderData, Color color, bool topEdge, bo
         DrawRectangle(renderData.top.x - 1, renderData.top.y - 1, 3, 3, GRAY);
     if(bottomEdge)
         DrawRectangle(renderData.bottom.x - 1, renderData.bottom.y - 1, 3, 3, GRAY);
+}
+
+
+WorldRasterizer::WorldRasterizer(uint32_t renderTargetWidth, uint32_t renderTargetHeight, const World& world, const RaycastingCamera& cam)
+{
+    Reset(renderTargetWidth, renderTargetHeight, world, cam);
+}
+
+void WorldRasterizer::Reset(uint32_t renderTargetWidth, uint32_t renderTargetHeight, const World &world, const RaycastingCamera &cam)
+{
+    ctx.world = &world;
+    ctx.cam = &cam;
+    ctx.FloorVerticalOffset = ComputeVerticalOffset(cam, renderTargetHeight);
+    ctx.CamCurrentSectorElevationOffset = 0; // TODO : ComputeElevationOffset(cam, world, RenderTargetHeight);
+    ctx.RenderTargetWidth = renderTargetWidth;
+    ctx.RenderTargetHeight = renderTargetHeight;
+    ctx.currentRenderItr = 0;
+
+    ctx.yBoundaries.resize(renderTargetWidth);
+
+    std::fill(ctx.yBoundaries.begin(), ctx.yBoundaries.end(), MinMax<uint32_t> {
+        .max = renderTargetHeight,
+        .min = 0,
+    });
+
+    // "Try to InitRasterizeWorldContext with an invalid SectorID"
+    assert(world.Sectors.contains(ctx.cam->currentSectorId));
+
+    // Clear the render stack
+    if(ctx.renderStack.size() > 0)
+    {
+        std::stack<SectorRenderContext>().swap(ctx.renderStack);    
+    }
+
+    ctx.renderStack.push({
+        .sectorId = ctx.cam->currentSectorId,
+        .renderArea = {
+            .xBegin = 0,
+            .xEnd = renderTargetWidth > 0 ? (renderTargetWidth - 1) : 0,
+        }
+    });
+}
+
+void WorldRasterizer::RasterizeWorldInTexture(const RenderTexture& renderTexture)
+{
+    assert(ctx.RenderTargetWidth == renderTexture.texture.width && ctx.RenderTargetHeight == renderTexture.texture.height);
+
+    BeginTextureMode(renderTexture);
+        RasterizeWorld();
+    EndTextureMode();
+}
+
+void WorldRasterizer::RasterizeWorld()
+{
+    ClearBackground(MY_BLACK);
+
+    while(IsRenderIterationRemains()) 
+    {
+        RenderIteration();
+    }
+}
+
+bool WorldRasterizer::IsRenderIterationRemains()
+{
+    return (ctx.renderStack.size() > 0 && ctx.currentRenderItr < ctx.cam->maxRenderItr);
+}
+
+void WorldRasterizer::RenderIteration()
+{
+    // "Rendering is ended, RenderIteration should not be called"
+    assert(IsRenderIterationRemains());
+
+    RasterizeInRenderArea(ctx, ctx.renderStack.top());
+
+    ctx.currentRenderItr++;
 }

@@ -7,13 +7,15 @@
 #include "Renderer/RaycastingCamera.hpp"
 #include "Renderer/World.hpp"
 
-struct RenderAreaYMinMax
+template <typename T>
+struct MinMax
 {
-    uint32_t max = 0;
-    uint32_t min  = 0;
+    T max { 0 };
+    T min { 0 };
 };
 
-using RenderAreaYBoundaries = std::vector<RenderAreaYMinMax>;
+using MinMaxUint32 = MinMax<uint32_t>;
+
 struct RenderArea
 {
     uint32_t xBegin { 0 };
@@ -28,35 +30,21 @@ struct SectorRenderContext
 
 struct RasterizeWorldContext 
 {
-    const World& world;
-    const RaycastingCamera& cam;
-    const uint32_t RenderTargetWidth; 
-    const uint32_t RenderTargetHeight;
-    const float FloorVerticalOffset;
-    const float CamCurrentSectorElevationOffset;
+    const World* world          { nullptr };
+    const RaycastingCamera* cam { nullptr };
+    uint32_t RenderTargetWidth  { 0 };
+    uint32_t RenderTargetHeight { 0 };
+    float FloorVerticalOffset               { 0.f };
+    float CamCurrentSectorElevationOffset   { 0.f };
     
-    RenderAreaYBoundaries yBoundaries;
+    uint32_t currentRenderItr { 0 };
+    std::vector<MinMaxUint32> yBoundaries;
     std::stack<SectorRenderContext> renderStack;
 };
 
-RasterizeWorldContext InitRasterizeWorldContext(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam);
+void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext);
 
-void RasterizeWorldInTexture(const RenderTexture& renderTexture, const World& world, const RaycastingCamera& cam);
-
-void RasterizeWorld(uint32_t RenderTargetWidth, uint32_t RenderTargetHeight, const World& world, const RaycastingCamera& cam);
-
-struct RaycastHitData 
-{
-    float distance = std::numeric_limits<float>::max();
-    Vector2 position;
-    const Wall* wall = nullptr;
-};
-
-using RenderNextAreaBordersCallback = std::function<void(RasterizeWorldContext&, RenderAreaYMinMax&, const Sector&, const Sector&, uint32_t, float)>;
-
-void RasterizeInRenderArea(RasterizeWorldContext& worldContext, SectorRenderContext renderContext, RenderNextAreaBordersCallback renderNextAreaBordersCallback);
-
-void RenderNextAreaBorders(RasterizeWorldContext& worldContext, RenderAreaYMinMax& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance);
+void RenderNextAreaBorders(RasterizeWorldContext& worldContext, MinMaxUint32& yMinMax, const Sector& currentSector, const Sector& nextSector, uint32_t x, float hitDistance);
 struct CameraYLineData
 {
     Vector2 top;
@@ -77,3 +65,24 @@ float ComputeVerticalOffset(const RaycastingCamera& cam, uint32_t RenderTargetHe
 float ComputeElevationOffset(const RaycastingCamera& cam, const World& world, uint32_t RenderTargetHeight);
 
 void RenderCameraYLine(CameraYLineData renderData, Color color, bool topBorder = true, bool bottomBorder = false);
+
+class WorldRasterizer
+{
+public:
+    WorldRasterizer() = default;
+    WorldRasterizer(WorldRasterizer&& other) = delete;
+
+    WorldRasterizer(uint32_t renderTargetWidth, uint32_t renderTargetHeight, const World& world, const RaycastingCamera& cam);
+    void Reset(uint32_t renderTargetWidth, uint32_t renderTargetHeight, const World& world, const RaycastingCamera& cam);
+
+    bool IsRenderIterationRemains();
+
+    void RasterizeWorldInTexture(const RenderTexture& renderTexture);
+    void RasterizeWorld();
+    void RenderIteration();
+
+    const RasterizeWorldContext& GetContext() const { return ctx; }
+
+private:
+    RasterizeWorldContext ctx;
+};

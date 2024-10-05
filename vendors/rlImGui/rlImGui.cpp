@@ -619,6 +619,24 @@ void rlImGuiImageRenderTextureFit(const RenderTexture* image, bool center)
     rlImGuiImageRect(&image->texture, sizeX, sizeY, Rectangle{ 0,0, float(image->texture.width), -float(image->texture.height) });
 }
 
+void rlImGuiImageRenderTextureFitWidth(const RenderTexture* image)
+{
+    if (!image)
+        return;
+
+    if (GlobalContext)
+		ImGui::SetCurrentContext(GlobalContext);
+
+    ImVec2 area = ImGui::GetContentRegionAvail();
+
+    float scale =  area.x / image->texture.width;
+
+    int sizeX = int(image->texture.width * scale);
+    int sizeY = int(image->texture.height * scale);
+
+    rlImGuiImageRect(&image->texture, sizeX, sizeY, Rectangle{ 0, 0, float(image->texture.width), -float(image->texture.height) });
+}
+
 // raw ImGui backend API
 bool ImGui_ImplRaylib_Init()
 {

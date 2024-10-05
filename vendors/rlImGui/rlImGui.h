@@ -155,6 +155,13 @@ void rlImGuiImageRenderTexture(const RenderTexture* image);
 void rlImGuiImageRenderTextureFit(const RenderTexture* image, bool center);
 
 /// <summary>
+/// Draws a render texture as an image an ImGui Context, automatically flipping the Y axis so it will show correctly on screen
+/// Fits the render texture to the available content width
+/// </summary>
+/// <param name="image">The render texture to draw</param>
+void rlImGuiImageRenderTextureFitWidth(const RenderTexture* image);
+
+/// <summary>
 /// Draws a texture as an image button in an ImGui context. Uses the current ImGui cursor position and the full size of the texture
 /// </summary>
 /// <param name="name">The display name and ImGui ID for the button</param>
