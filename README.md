@@ -49,7 +49,7 @@ For now the project in a prototyping phase, still mainly focused in making an ef
   - [x] Rendering steps visalizer
  - [ ] Map Editor including :
   - [x] Controls (zoom, move, ...)
-  - [ ] Sector Editor
+  - [ ] [IN_PROGRESS] Sector Editor
     - [x] Elevation editor
     - [x] Proper sectors rendering
     - [ ] Sector creation tool
@@ -58,9 +58,12 @@ For now the project in a prototyping phase, still mainly focused in making an ef
   - [ ] Vignet editor
   - [ ] Sprite editor
  - [ ] Texture Browser
-
 *System*
 - [ ] Project instance cration : being able to create a project witch is using the engine and editor in one click
+- [ ] Simple assets serealization / deserialization system
+  - [ ] standards containers (std::map, std::vector, std::string)
+  - [ ] Map / Entities
+  - [ ] Enable user to implement serialization for his own Asset types 
 - [ ] Project shiping including :
   - [ ] Release Build
   - [ ] Assets bundle

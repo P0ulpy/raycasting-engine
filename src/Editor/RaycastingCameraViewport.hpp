@@ -46,7 +46,7 @@ public:
             // draw the view
             rlImGuiImageRenderTextureFit(&renderTexture, true);
 
-            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            if(ImGui::IsWindowFocused() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 ImVec2 viewportRecMin = ImGui::GetItemRectMin();
                 ImVec2 viewportRecMax = ImGui::GetItemRectMax();
@@ -56,13 +56,13 @@ public:
                     && mousePos.y >= viewportRecMin.y && mousePos.y <= viewportRecMax.y
                 )
                 {
-                    focused = true;
+                    mouseFocused = true;
                 }
             }
 
             if(IsFocused() && IsKeyPressed(KEY_ESCAPE))
             {
-                focused = false;
+                mouseFocused = false;
             }
         }
         ImGui::End();
@@ -72,7 +72,7 @@ public:
 
     bool IsFocused() const
     {
-        return focused;
+        return mouseFocused;
     }
 
     const RenderTexture2D& GetRenderTexture() const { return renderTexture; }
@@ -116,7 +116,7 @@ private:
     RenderTexture2D renderTexture;
 
     bool mouseLocked = false;
-    bool focused     = false;
+    bool mouseFocused     = false;
     bool autoResize  = false;
 
     ImGuiWindow* parentWindow = nullptr; 

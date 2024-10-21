@@ -57,11 +57,6 @@ int main()
     SetupImGuiStyle();
 
     SetTargetFPS(144);
-
-    /// Global
-    
-    float deltaTime = 0;
-    float lastFrameTime = GetTime();
     
     World world;
 
@@ -76,17 +71,14 @@ int main()
 
     while (!WindowShouldClose())
     {
-        float currentTime = GetTime();
-        deltaTime = currentTime - lastFrameTime;
-        lastFrameTime = currentTime;
-
+        float deltaTime = GetFrameTime();
         // Inputs
 
         // Update
         
         {
             std::string windowTitle = "raycasting-engine [";
-            windowTitle += std::to_string(1.0f / deltaTime);
+            windowTitle += std::to_string(GetFPS());
             windowTitle += " FPS]";
 
             SetWindowTitle(windowTitle.c_str());

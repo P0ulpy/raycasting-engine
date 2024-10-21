@@ -25,7 +25,7 @@ inline void DrawArrow(Vector2 start, Vector2 end, Color color = RED, float thick
     DrawTriangle(end, arrowTipA, arrowTipB, color);
 }
 
-void DrawTextureFlippedY(const Texture2D& texture, int posX, int posY, Color tint)
+inline void DrawTextureFlippedY(const Texture2D& texture, int posX, int posY, Color tint)
 {
     Rectangle sourceRec = { 0.0f, 0.0f, (float)texture.width, (float)-texture.height }; // Flip Y axis
     Rectangle destRec = { (float)posX, (float)posY, (float)texture.width, (float)texture.height };
