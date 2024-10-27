@@ -20,7 +20,7 @@ void RasterizeInRenderArea(RasterizeWorldContext& ctx, SectorRenderContext rende
     {
         MinMaxUint32& yMinMax = ctx.yBoundaries.at(x);
 
-        float rayAngle = RayAngleforScreenXCam(x, *ctx.cam, ctx.RenderTargetWidth);
+        float rayAngle = RayAngleForScreenXCam(x, *ctx.cam, ctx.RenderTargetWidth);
 
         RasterRay rasterRay = {
             .position = ctx.cam->position,
@@ -304,9 +304,9 @@ void WorldRasterizer::RasterizeWorld()
     }
 }
 
-bool WorldRasterizer::IsRenderIterationRemains()
+bool WorldRasterizer::IsRenderIterationRemains() const
 {
-    return (ctx.renderStack.size() > 0 && ctx.currentRenderItr < ctx.cam->maxRenderItr);
+    return (!ctx.renderStack.empty() && ctx.currentRenderItr < ctx.cam->maxRenderItr);
 }
 
 void WorldRasterizer::RenderIteration()

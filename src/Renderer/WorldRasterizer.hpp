@@ -75,7 +75,7 @@ public:
     WorldRasterizer(uint32_t renderTargetWidth, uint32_t renderTargetHeight, const World& world, const RaycastingCamera& cam);
     void Reset(uint32_t renderTargetWidth, uint32_t renderTargetHeight, const World& world, const RaycastingCamera& cam);
 
-    bool IsRenderIterationRemains();
+    bool IsRenderIterationRemains() const;
 
     void RasterizeWorldInTexture(const RenderTexture& renderTexture);
     void RasterizeWorld();

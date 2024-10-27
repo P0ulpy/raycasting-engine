@@ -1,22 +1,20 @@
 #pragma once
 
-#include <imgui.h>
 #include <vector>
+#include <raylib.h>
+#include <imgui.h>
 
-#include "RaycastingCameraViewport.hpp"
 #include "Utils/DrawingHelper.hpp"
 
 class RenderingOrchestrator
 {
 public:
-    RenderingOrchestrator(RaycastingCameraViewport& cameraViewport)
-        : cameraViewport(cameraViewport)
+    explicit RenderingOrchestrator(const RenderTexture2D& renderTexture)
+        : renderTexture(renderTexture)
     {}
     
     void Render(World &world, RaycastingCamera &cam)
     {
-        auto& renderTexture = cameraViewport.GetRenderTexture();
-
         if(play)
         {
             AllRenderItr(world, cam);
@@ -27,18 +25,19 @@ public:
             {
                 case StepInto: OneRenderItr(world, cam); break;
                 case StepOver: AllRenderItr(world, cam); break;
+                case None:
+                    break;
             }
 
             invokeEvent = None;
         }
     }
 
-    void InitilizeFrame(World &world, RaycastingCamera &cam)
+    void InitializeFrame(World &world, RaycastingCamera &cam)
     {
-        auto& renderTexture = cameraViewport.GetRenderTexture();
         rasterizer.Reset(renderTexture.texture.width, renderTexture.texture.height, world, cam);
 
-        if(rasterizingItrsTextures.size() > 0)
+        if(!rasterizingItrsTextures.empty())
         {
             int width = rasterizingItrsTextures[0].texture.width;
             int height = rasterizingItrsTextures[0].texture.height;
@@ -71,12 +70,11 @@ public:
     {
         if(!rasterizer.IsRenderIterationRemains())
         {
-            InitilizeFrame(world, cam);
+            InitializeFrame(world, cam);
         }
 
         assert(rasterizer.IsRenderIterationRemains());
 
-        auto& renderTexture = cameraViewport.GetRenderTexture();
         auto& ctx = rasterizer.GetContext();
     
         BeginTextureMode(renderTexture);
@@ -146,8 +144,8 @@ public:
         ImGui::End();
     }
 
-private:    
-    RaycastingCameraViewport& cameraViewport;
+private:
+    const RenderTexture2D& renderTexture;
     WorldRasterizer rasterizer;
 
     bool play = true;

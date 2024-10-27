@@ -67,12 +67,12 @@ struct RaycastingCamera
             ImGui::SliderAngle("pitch", &pitch, -90, 90);
             
             ImGui::SliderFloat("FOV", &fov, 20, 180);
-            ImGui::SliderFloat("FOV Vetical", &fovVectical, 20, 180);
+            ImGui::SliderFloat("FOV Vertical", &fovVectical, 20, 180);
             ImGui::SliderFloat("Far plane Distance", &farPlaneDistance, 1, 5000);
             ImGui::SliderFloat("Near plane Distance", &nearPlaneDistance, 1, 500);
 
             ImGui::SliderFloat("Move Speed", &moveSpeed, 0, 1000);
-            ImGui::SliderFloat("Z axix Move Speed", &zAxisMoveSpeed, 0, 5000);
+            ImGui::SliderFloat("Z axis Move Speed", &zAxisMoveSpeed, 0, 5000);
             ImGui::SliderFloat("Mouse Sensitivity", &mouseSensitivity, 0, 2);
 
             ImGui::InputInt("Max render itr", (int*)&maxRenderItr);
@@ -139,7 +139,7 @@ struct RaycastingCamera
     }
 };
 
-inline float RayAngleforScreenXCam(int screenX, const RaycastingCamera& cam, uint32_t RenderTargetWidth)
+inline float RayAngleForScreenXCam(int screenX, const RaycastingCamera& cam, uint32_t RenderTargetWidth)
 {
     float fovRate = cam.fov / RenderTargetWidth;
     float angle = -(cam.fov / 2);

@@ -16,6 +16,7 @@ WorldEditor::WorldEditor(World& world, Vector2 target)
         .rotation = 0.f,
         .zoom = 1.f,
     })
+    , drawTool(*this)
 {}
 
 WorldEditor::~WorldEditor()
@@ -37,36 +38,54 @@ void WorldEditor::DrawGUI()
     RenderViewportGui();
 }
 
-Vector2 WorldEditor::GetMouseViewportPosition() const
+Vector2 WorldEditor::ScreenToViewportPosition(Vector2 pos) const
 {
-    Vector2 mousePos = GetMousePosition();
-    Vector2 mousePosInViewport = Vector2Subtract(mousePos, viewportWindowOffset);
+    Vector2 posInViewport = Vector2Subtract(pos, viewportWindowOffset);
 
-    Vector2 mousePosInRenderTexture = {
-        mousePosInViewport.x * ((float)renderTexture.texture.width / viewportWindowSize.x),
-        mousePosInViewport.y * ((float)renderTexture.texture.height / viewportWindowSize.y),
+    Vector2 posInRenderTexture = {
+        posInViewport.x * ((float)renderTexture.texture.width / viewportWindowSize.x),
+        posInViewport.y * ((float)renderTexture.texture.height / viewportWindowSize.y),
     };
 
-    return mousePosInRenderTexture;
+    return posInRenderTexture;
 }
 
-Vector2 WorldEditor::GetMouseWorldPosition() const
+Vector2 WorldEditor::ScreenToWorldPosition(Vector2 viewportPos) const
 {
-    Vector2 mousePos = GetMouseViewportPosition();
-    Vector2 mouseWorldPos = GetScreenToWorld2D(mousePos, camera);
-
-    return mouseWorldPos;
+    Vector2 pos = ScreenToViewportPosition(viewportPos);
+    return GetScreenToWorld2D(pos, camera);
 }
 
 void WorldEditor::Update(float dt)
 {
     if(isViewportFocused)
     {
-        HandleInputs();
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+        {
+            Vector2 delta = GetMouseDelta();
+            delta = Vector2Scale(delta, - MouseDragSensitivity / camera.zoom);
+            camera.target = Vector2Add(camera.target, delta);
+        }
+
+        Vector2 mouseWorldPos = ScreenToWorldPosition(GetMousePosition());
+
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0)
+        {
+            camera.offset = ScreenToViewportPosition(GetMousePosition());
+            camera.target = mouseWorldPos;
+
+            float scaleFactor = MouseZoomSensitivity + (0.25f * fabsf(wheel));
+            if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
+
+            camera.zoom = Clamp(camera.zoom * scaleFactor, MinZoom, MaxZoom);
+        }
+
+        drawTool.Update(dt);
     }
 }
 
-void WorldEditor::Render(RaycastingCamera& cam)
+void WorldEditor::Render(RaycastingCamera& cam) const
 {
     BeginTextureMode(renderTexture);
 
@@ -90,74 +109,13 @@ void WorldEditor::Render(RaycastingCamera& cam)
                 }
             }
 
-            // Wall Drawing Render
-            if(isDragging)
-            {
-                EndMode2D();
-                    Vector2 mousePos = GetMouseViewportPosition();
-                    DrawLine(mousePos.x, 0, mousePos.x, renderTexture.texture.height, GRAY);
-                    DrawLine(0, mousePos.y, renderTexture.texture.width, mousePos.y, GRAY);
-
-                BeginMode2D(camera);
-
-                DrawLineV(dragStartPosition, dragEndPosition, ORANGE);
-                DrawCircleV(dragStartPosition, 1, RED);
-                DrawCircleV(dragEndPosition, 1, BLUE);
-            }
-
         EndMode2D();
 
         DrawUI();
 
+        drawTool.Render(cam);
+
     EndTextureMode();
-}
-
-void WorldEditor::HandleInputs()
-{
-    constexpr float MOUSE_DRAG_SENSITIVITY = 1.f;
-
-    if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-    {
-        Vector2 delta = GetMouseDelta();
-        delta = Vector2Scale(delta, -MOUSE_DRAG_SENSITIVITY / camera.zoom);
-        camera.target = Vector2Add(camera.target, delta);
-    }
-
-    constexpr float MOUSE_ZOOM_SENSITIVITY = 1.f;
-
-    Vector2 mouseWorldPos = GetMouseWorldPosition();
-
-    float wheel = GetMouseWheelMove();
-    if (wheel != 0)
-    {
-        camera.offset = GetMouseViewportPosition();
-        camera.target = mouseWorldPos;
-
-        float scaleFactor = MOUSE_ZOOM_SENSITIVITY + ( 0.25f * fabsf(wheel));
-        if (wheel < 0) scaleFactor = 1.0f / scaleFactor;
-
-        camera.zoom = Clamp(camera.zoom * scaleFactor, MinZoom, MaxZoom);
-    }
-
-    // Wall Drawing Drag
-    {
-        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        {
-            dragStartPosition = mouseWorldPos;
-            isDragging = true;
-        }
-        else if(IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-        {
-            dragEndPosition = mouseWorldPos;
-        }
-        //else if(IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-        else if(isDragging)
-        {
-            float deltaLength = Vector2Length(Vector2Subtract(dragStartPosition, dragEndPosition));
-            std::cout << "Delta Length : " << deltaLength << std::endl;
-            isDragging = false;
-        }
-    }
 }
 
 void WorldEditor::DrawCam(const RaycastingCamera& cam)
@@ -172,42 +130,6 @@ void WorldEditor::DrawCam(const RaycastingCamera& cam)
 
 void WorldEditor::DrawBackgroundGrid() const
 {
-//    int32_t cellSize = GetGridCellSize();
-//    int32_t gridSize = cellSize * 100;
-//
-//    // Compute Grid Offset based on camera position
-//
-//    const int32_t rowOffset = (int32_t)camera.target.x / cellSize;
-//    int32_t startingRow = -(gridSize - rowOffset);
-//    int32_t endingRow = (gridSize + rowOffset);
-//
-//    const int32_t colOffset = (int32_t)camera.target.y / cellSize;
-//    int32_t startingCol = -(gridSize - colOffset);
-//    int32_t endingCol = (gridSize + colOffset);
-//
-//    int32_t yRowBegin = startingCol * cellSize;
-//    int32_t yRowEnd = endingCol * cellSize;
-//
-//    for (int32_t row = startingRow; row <= endingRow; ++row)
-//    {
-//        int32_t x = cellSize * row;
-//        DrawLine(x, yRowBegin, x, yRowEnd, GridColor);
-//    }
-//
-//    int32_t xColBegin = startingRow * cellSize;
-//    int32_t xColEnd = endingRow * cellSize;
-//
-//    for (int32_t col = startingCol; col <= endingCol; ++col)
-//    {
-//        int32_t y = cellSize * col;
-//        DrawLine(xColBegin, y, xColEnd, y, GridColor);
-//    }
-//    for (int32_t row = startingRow; row <= endingRow; ++row)
-//    {
-//        int32_t x = cellSize * row;
-//        DrawLine(x, yRowBegin, x, yRowEnd, GridColor);
-//    }
-
     int32_t cellSize = GetGridCellSize();
 
     Vector2 center = {
@@ -217,8 +139,8 @@ void WorldEditor::DrawBackgroundGrid() const
     center = GetScreenToWorld2D(center, camera);
 
     Vector2 offset = {
-        std::round(center.x / cellSize) * cellSize,
-        std::round(center.y / cellSize) * cellSize
+        std::round(center.x / (float)cellSize) * (float)cellSize,
+        std::round(center.y / (float)cellSize) * (float)cellSize
     };
 
     int32_t xStart = ((int32_t)offset.x - GridSize);
@@ -271,7 +193,7 @@ void WorldEditor::DrawWall(const Wall& wall, bool noSectorSelected, bool thisSec
     DrawLineEx(tikPositionA, tikPositionB, thickness, tikColor);
 }
 
-void WorldEditor::DrawUI()
+void WorldEditor::DrawUI() const
 {
     // Top Right Axis
     {
@@ -292,7 +214,7 @@ void WorldEditor::DrawUI()
             40,
         };
 
-        Vector2 mousePos = GetMouseViewportPosition();
+        Vector2 mousePos = ScreenToViewportPosition(GetMousePosition());
 
         std::stringstream posStr;
         posStr << "Cursor pos : [ " << (uint32_t)mousePos.x << ", " << (uint32_t)mousePos.y << " ]";
@@ -408,7 +330,7 @@ int32_t WorldEditor::GetGridCellSize() const
 
     if(camera.zoom <= 1.f)
         cellSize = 100;
-    else if (camera.zoom <= 5.f)
+    else if (camera.zoom <= 3.f)
         cellSize = 50;
     else if (camera.zoom <= 10.f)
         cellSize = 25;

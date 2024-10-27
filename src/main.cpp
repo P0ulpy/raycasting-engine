@@ -1,7 +1,4 @@
 #include <raylib.h>
-#include <raymath.h>
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
 
 #include <rlImGui.h>
 #include <imgui.h>
@@ -15,14 +12,17 @@
 
 #include "Editor/ImGuiStyle.hpp"
 #include "Editor/RaycastingCameraViewport.hpp"
-#include "Editor/MiniMapViewport.hpp"
 #include "Editor/RenderingOrchestrator.hpp"
 #include "Editor/WorldEditor.hpp"
 
-#include "Utils/ColorHelper.hpp"
-
 constexpr int DefaultScreenWidth = 1720;
 constexpr int DefaultScreenHeight = 880;
+
+struct {
+    bool renderingTool = false;
+    bool cameraOptions = false;
+    bool worldEditor = true;
+} displayGuiStates;
 
 void ApplicationMainMenuBar()
 {
@@ -30,6 +30,10 @@ void ApplicationMainMenuBar()
     {
         if (ImGui::BeginMenu("Menu"))
         {
+            ImGui::MenuItem("Rendering Tool", nullptr, &displayGuiStates.renderingTool);
+            ImGui::MenuItem("Camera Options", nullptr, &displayGuiStates.cameraOptions);
+            ImGui::MenuItem("World Editor", nullptr, &displayGuiStates.worldEditor);
+
             if (ImGui::MenuItem("Close"))
             {
                 CloseWindow();
@@ -46,28 +50,28 @@ int main()
     // init
 
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE);
-    InitWindow(DefaultScreenWidth, DefaultScreenHeight, "raycasting-engine");
+    InitWindow(DefaultScreenWidth, DefaultScreenHeight, "raycasting-engine-editor");
     SetExitKey(KEY_NULL);
 
     rlImGuiSetup(true);
-    ImGuiIO& imguiIO = ImGui::GetIO();
-    imguiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    imguiIO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    imguiIO.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    ImGuiIO& imGuiIo = ImGui::GetIO();
+    imGuiIo.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    imGuiIo.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     SetupImGuiStyle();
 
     SetTargetFPS(144);
     
     World world;
 
-    RaycastingCamera cam = {
+    RaycastingCamera cam {
         { 550, 600 },
     };
 
-    RaycastingCameraViewport cameraViewport(cam, 1920, 1080);
+    RaycastingCameraViewport cameraViewport(1920, 1080);
     WorldEditor worldEditor(world, cam.position);
 
-    RenderingOrchestrator renderingOrchestrator(cameraViewport);
+    RenderingOrchestrator renderingOrchestrator(cameraViewport.GetRenderTexture());
 
     while (!WindowShouldClose())
     {
@@ -87,7 +91,7 @@ int main()
         {
             // Update current sector
             uint32_t currentSectorId = FindSectorOfPoint(cam.position, world);
-            if(NULL_SECTOR != currentSectorId)
+            if(currentSectorId != NULL_SECTOR)
             {
                 cam.currentSectorId = currentSectorId;
             }
@@ -121,11 +125,14 @@ int main()
                 ImGui::DockSpaceOverViewport();
                 ApplicationMainMenuBar();
 
-                cam.DrawGUI();
                 cameraViewport.DrawGUI();
-                renderingOrchestrator.DrawGUI();
 
-                worldEditor.DrawGUI();
+                if(displayGuiStates.cameraOptions)
+                    cam.DrawGUI();
+                if(displayGuiStates.renderingTool)
+                    renderingOrchestrator.DrawGUI();
+                if(displayGuiStates.worldEditor)
+                    worldEditor.DrawGUI();
 
             rlImGuiEnd();
 

@@ -9,9 +9,8 @@
 class RaycastingCameraViewport
 {
 public:
-    RaycastingCameraViewport(RaycastingCamera& camera, uint32_t RenderTextureWidth, uint32_t RenderTextureHeight)
-        : cam(camera)
-        , renderTexture(LoadRenderTexture(RenderTextureWidth, RenderTextureHeight))
+    RaycastingCameraViewport(int32_t RenderTextureWidth, int32_t RenderTextureHeight)
+        : renderTexture(LoadRenderTexture(RenderTextureWidth, RenderTextureHeight))
     {}
 
     ~RaycastingCameraViewport()
@@ -112,13 +111,8 @@ private:
     }
 
 private:
-    RaycastingCamera& cam;
     RenderTexture2D renderTexture;
 
-    bool mouseLocked = false;
-    bool mouseFocused     = false;
-    bool autoResize  = false;
-
-    ImGuiWindow* parentWindow = nullptr; 
-    ImGuiID parentId = 0;
+    bool mouseFocused = false;
+    bool autoResize = false;
 };
