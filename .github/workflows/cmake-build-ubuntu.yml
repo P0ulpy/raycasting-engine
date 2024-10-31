@@ -30,16 +30,20 @@ jobs:
           submodules: true
 
       - name: Install dependencies on Ubuntu for GLFW3
-        if: runner.os == 'ubuntu-latest'
-        run: sudo apt install libxinerama-dev libxcursor-dev pkg-config xcursor xinerama xorg-dev xorg libglu1-mesa-dev libglu1-mesa
+        if: runner.os == 'Linux'
+        run: | 
+            sudo apt update
+            sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libwayland-dev libxkbcommon-dev
 
       - name: Install dependencies on Ubuntu for Raylib
-        if: runner.os == 'ubuntu-latest'
-        run: sudo apt install libgl1-mesa-dev libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev
+        if: runner.os == 'Linux'
+        run: | 
+            sudo apt update
+            sudo apt install libgl1-mesa-dev libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev
     
       - name: Install dependencies on macOS for GLFW3
         if: runner.os == 'macos-latest'
-        run: brew install install libxinerama-dev libxcursor-dev pkg-config xcursor xinerama xorg-dev xorg libglu1-mesa-dev libglu1-mesa
+        run: brew install libxinerama-dev libxcursor-dev pkg-config xcursor xinerama xorg-dev xorg libglu1-mesa-dev libglu1-mesa
 
       - name: Install dependencies on macOS for Raylib
         if: runner.os == 'macos-latest'
